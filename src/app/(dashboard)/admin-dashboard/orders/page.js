@@ -1,51 +1,84 @@
-// src/app/(dashboard)/admin-dashboard/orders/page.js
 "use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-const orders = [
-  { id: 101, customer: "Ravi Kumar", total: 4500, status: "Pending" },
-  { id: 102, customer: "Priya Sharma", total: 1200, status: "Shipped" },
-  { id: 103, customer: "Amit Singh", total: 780, status: "Delivered" },
-];
+export default function AdminUserOrders({ userId }) {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-export default function OrdersPage() {
+  useEffect(() => {
+    fetch(`/api/admin/admin-orders?userId=${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setOrders(data.orders);
+      })
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  if (loading) return <p>Loading orders...</p>;
+  if (!orders.length) return <p>No orders for this user.</p>;
+
   return (
-    <div>
-      <h2 className="text-2xl text-gray-900 font-bold mb-6">Orders</h2>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">Orders for User</h2>
+      <div className="space-y-4">
+        {orders.map(order => (
+          <div key={order._id} className="border p-4 rounded-lg shadow">
+            <div className="flex justify-between items-center mb-2">
+              <p>
+                <strong>Order ID:</strong> {order._id}
+              </p>
+              {/* View User Button */}
+              <button
+                onClick={() => router.push(`/admin-dashboard/users/${order.userId}`)}
+                className="text-blue-600 hover:underline text-sm"
+              >
+                View User
+              </button>
+            </div>
 
-      <table className="w-full bg-white text-gray-900 shadow rounded-lg overflow-hidden">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="px-4 py-2 text-left">Order ID</th>
-            <th className="px-4 py-2 text-left">Customer</th>
-            <th className="px-4 py-2 text-left">Total</th>
-            <th className="px-4 py-2 text-left">Status</th>
-            <th className="px-4 py-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((o) => (
-            <tr key={o.id} className="border-b">
-              <td className="px-4 py-2">{o.id}</td>
-              <td className="px-4 py-2">{o.customer}</td>
-              <td className="px-4 py-2">₹{o.total}</td>
-              <td className="px-4 py-2">{o.status}</td>
-              <td className="px-4 py-2">
-                <Link
-                  href={`/admin-dashboard/orders/${o.id}`}
-                  className="text-blue-600 hover:underline mr-3"
+            <p>
+              <strong>Status:</strong> {order.status}
+            </p>
+            <p>
+              <strong>Total:</strong> ₹{Number(order.totalAmount).toLocaleString()}
+            </p>
+
+            <div className="mt-2 space-y-2">
+              {order.items.map((item, idx) => (
+                <div
+                  key={`${item.productId}-${idx}`}
+                  className="flex items-center justify-between gap-3 border-b py-2"
                 >
-                  View
-                </Link>
-                <button className="text-red-600 hover:underline">
-                  Cancel
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={item.image || "/placeholder.png"}
+                      alt={item.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                      <p className="text-sm text-gray-600">
+                        Price: ₹{Number(item.price).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  {/* View Product Button */}
+                  <button
+                    onClick={() => router.push(`/admin-dashboard/products/${item.productId}`)}
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    View Product
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

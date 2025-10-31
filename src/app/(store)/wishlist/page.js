@@ -7,42 +7,48 @@ export default function WishlistPage() {
   const router = useRouter();
   const [wishlist, setWishlist] = useState([]);
 
-  // ✅ Load wishlist on mount
+  // Load wishlist safely
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("wishlist")) || [];
-    setWishlist(stored);
+    try {
+      const stored = JSON.parse(localStorage.getItem("wishlist")) || [];
+      setWishlist(stored);
+    } catch (err) {
+      console.error("Error reading wishlist:", err);
+      setWishlist([]);
+    }
   }, []);
 
-  // ✅ Keep localStorage synced
+  // Keep localStorage synced
   useEffect(() => {
     localStorage.setItem("wishlist", JSON.stringify(wishlist));
   }, [wishlist]);
 
-  // ✅ Move item to cart
+  // Move item to cart
   const handleMoveToCart = (id) => {
     const itemToMove = wishlist.find((item) => item._id === id);
     if (!itemToMove) return;
 
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const existing = cart.find((item) => item._id === id);
+    try {
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const existing = cart.find((item) => item._id === id);
 
-    if (existing) existing.quantity += 1;
-    else cart.push({ ...itemToMove, quantity: 1 });
+      if (existing) existing.quantity += 1;
+      else cart.push({ ...itemToMove, quantity: 1 });
 
-    localStorage.setItem("cart", JSON.stringify(cart));
+      localStorage.setItem("cart", JSON.stringify(cart));
 
-    // Remove from wishlist
-    const updated = wishlist.filter((item) => item._id !== id);
-    setWishlist(updated);
+      setWishlist(wishlist.filter((item) => item._id !== id));
+    } catch (err) {
+      console.error("Error updating cart:", err);
+    }
   };
 
-  // ✅ Remove item from wishlist
+  // Remove item
   const handleRemove = (id) => {
-    const updated = wishlist.filter((item) => item._id !== id);
-    setWishlist(updated);
+    setWishlist(wishlist.filter((item) => item._id !== id));
   };
 
-  // ✅ Go to product page
+  // Go to product page
   const handleViewProduct = (id) => {
     router.push(`/product/${id}`);
   };

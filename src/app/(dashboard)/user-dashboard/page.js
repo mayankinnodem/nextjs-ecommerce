@@ -11,7 +11,7 @@ export default function DashboardHome() {
 
   // Navigation handler
   const handleNavigate = (path) => {
-    router.push(`/user-dashboard/${path}`);
+   <Link href={`/user-dashboard/${user}`}>Dashboard</Link>
   };
 
   return (
