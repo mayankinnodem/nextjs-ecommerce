@@ -10,7 +10,7 @@ export default function AttributesPage() {
   const [editId, setEditId] = useState(null);
 
   const fetchAttributes = async () => {
-    const res = await fetch("/api/attributes");
+    const res = await fetch("/api/admin/attributes");
     const data = await res.json();
     if (data.success) setAttributes(data.attributes);
   };
@@ -24,7 +24,7 @@ export default function AttributesPage() {
 
     const valsArray = values.split(",").map((v) => v.trim());
 
-    const res = await fetch("/api/attributes", {
+    const res = await fetch("/api/admin/attributes", {
       method: "POST",
       body: JSON.stringify({ name, values: valsArray }),
       headers: { "Content-Type": "application/json" },
@@ -44,7 +44,7 @@ export default function AttributesPage() {
   const handleUpdate = async () => {
     const valsArray = values.split(",").map((v) => v.trim());
 
-    const res = await fetch(`/api/attributes/${editId}`, {
+    const res = await fetch(`/api/admin/attributes/${editId}`, {
       method: "PUT",
       body: JSON.stringify({ name, values: valsArray }),
       headers: { "Content-Type": "application/json" },
@@ -65,7 +65,7 @@ export default function AttributesPage() {
   const handleDelete = async (id) => {
     if (!confirm("Delete Attribute?")) return;
 
-    const res = await fetch(`/api/attributes/${id}`, {
+    const res = await fetch(`/api/admin/attributes/${id}`, {
       method: "DELETE",
     });
 

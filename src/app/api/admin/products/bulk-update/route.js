@@ -1,4 +1,4 @@
-// src/app/api/products/bulk-update/route.js
+// src/app/api/admin/products/bulk-update/route.js
 import { connectDB } from "@/lib/dbConnect";
 import Product from "@/models/Product";
 

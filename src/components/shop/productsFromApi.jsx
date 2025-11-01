@@ -22,7 +22,7 @@ const ProductsFromApi = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("/api/categories");
+        const res = await fetch("/api/store/categories");
         const data = await res.json();
         if (data.success) setCategories(data.categories);
       } catch (err) {
@@ -38,7 +38,7 @@ const ProductsFromApi = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/products");
+        const res = await fetch("/api/store/products");
         const data = await res.json();
         if (data.success) setProducts(data.products);
         else console.error("Failed to fetch products:", data.error);

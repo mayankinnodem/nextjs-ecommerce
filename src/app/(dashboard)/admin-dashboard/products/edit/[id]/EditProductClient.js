@@ -44,10 +44,10 @@ export default function EditProductClient({ id }) {
     const fetchData = async () => {
       try {
         const [brandRes, catRes, attrRes, productRes] = await Promise.all([
-          fetch("/api/brand"),
-          fetch("/api/categories"),
-          fetch("/api/attributes"),
-          fetch(`/api/products/${id}`),
+          fetch("/api/admin/brand"),
+          fetch("/api/admin/categories"),
+          fetch("/api/admin/attributes"),
+          fetch(`/api/admin/products/${id}`),
         ]);
 
         const [brandData, catData, attrData, productData] = await Promise.all([
@@ -164,7 +164,7 @@ export default function EditProductClient({ id }) {
         .map((img) => img.url);
       formData.append("existingImages", JSON.stringify(existingUrls));
 
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetch(`/api/admin/products/${id}`, {
         method: "PUT",
         body: formData,
       });

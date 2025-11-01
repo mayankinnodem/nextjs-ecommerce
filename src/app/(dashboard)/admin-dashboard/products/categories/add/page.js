@@ -14,7 +14,7 @@ export default function AddCategoryPage() {
     formData.append("data", JSON.stringify(form));
     if (image) formData.append("image", image);
 
-    const res = await fetch("/api/categories", { method: "POST", body: formData });
+    const res = await fetch("/api/admin/categories", { method: "POST", body: formData });
     const data = await res.json();
 
     if (data.success) {

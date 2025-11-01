@@ -7,7 +7,7 @@ export default function BrandListPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchBrands = async () => {
-    const res = await fetch("/api/brand");
+    const res = await fetch("/api/admin/brand");
     const data = await res.json();
     if (data.success) setBrands(data.brands);
     setLoading(false);
@@ -15,7 +15,7 @@ export default function BrandListPage() {
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this Brand?")) return;
-    const res = await fetch(`/api/brand/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/brand/${id}`, { method: "DELETE" });
     const data = await res.json();
     if (data.success) fetchBrands();
     else alert("❌ " + data.error);

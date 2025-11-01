@@ -13,7 +13,7 @@ export default function EditBrandPage() {
 
   useEffect(() => {
     const fetchBrand = async () => {
-      const res = await fetch(`/api/brand/${params.id}`);
+      const res = await fetch(`/api/admin/brand/${params.id}`);
       const data = await res.json();
       if (data.success) {
         setForm({
@@ -36,7 +36,7 @@ export default function EditBrandPage() {
     formData.append("data", JSON.stringify(form));
     if (image?.file) formData.append("image", image.file);
 
-    const res = await fetch(`/api/brand/${params.id}`, { method: "PUT", body: formData });
+    const res = await fetch(`/api/admin/brand/${params.id}`, { method: "PUT", body: formData });
     const data = await res.json();
     if (data.success) {
       alert("✅ Brand Updated!");

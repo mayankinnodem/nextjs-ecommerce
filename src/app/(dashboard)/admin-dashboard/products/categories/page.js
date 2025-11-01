@@ -7,7 +7,7 @@ export default function CategoryListPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchCategories = async () => {
-    const res = await fetch("/api/categories");
+    const res = await fetch("/api/admin/categories");
     const data = await res.json();
     if (data.success) setCategories(data.categories);
     setLoading(false);
@@ -15,7 +15,7 @@ export default function CategoryListPage() {
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this category?")) return;
-    const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/categories/${id}`, { method: "DELETE" });
     const data = await res.json();
     if (data.success) fetchCategories();
     else alert("❌ " + data.error);

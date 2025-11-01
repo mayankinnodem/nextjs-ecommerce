@@ -9,7 +9,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const res = await fetch("/api/categories");
+        const res = await fetch("/api/admin/categories");
         const data = await res.json();
         if (data.success) {
           setCategories(data.categories);

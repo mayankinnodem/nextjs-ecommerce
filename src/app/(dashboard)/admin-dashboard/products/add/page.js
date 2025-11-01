@@ -40,9 +40,9 @@ export default function AddProductPage() {
     const fetchData = async () => {
       try {
         const [brandRes, catRes, attrRes] = await Promise.all([
-          fetch("/api/brand"),
-          fetch("/api/categories"),
-          fetch("/api/attributes"),
+          fetch("/api/admin/brand"),
+          fetch("/api/admin/categories"),
+          fetch("/api/admin/attributes"),
         ]);
 
         const [brandData, catData, attrData] = await Promise.all([
@@ -144,7 +144,7 @@ export default function AddProductPage() {
       formData.append("data", JSON.stringify(productData));
       form.images.forEach((img) => formData.append("images", img.file));
 
-      const res = await fetch("/api/products/add", {
+      const res = await fetch("/api/admin/products/add", {
         method: "POST",
         body: formData,
       });

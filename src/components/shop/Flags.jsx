@@ -12,7 +12,7 @@ export default function Flags() {
 useEffect(() => {
   const fetchProducts = async () => {
     try {
-      const res = await fetch("/api/products");
+      const res = await fetch("/api/store/products");
       const data = await res.json();
       if (data.success) {
         setTrending(data.products.filter(p => p.isTrending));

@@ -1,4 +1,4 @@
-// src/app/api/products/[id]/route.js
+// src/app/api/admin/products/[id]/route.js
 
 import { NextResponse } from "next/server";
 import Product from "@/models/Product";

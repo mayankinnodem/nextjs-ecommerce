@@ -31,9 +31,9 @@ export default function ProductsPage() {
       try {
         setLoading(true);
         const [pRes, bRes, cRes] = await Promise.all([
-          fetch("/api/products"),
-          fetch("/api/brand"),
-          fetch("/api/categories"),
+          fetch("/api/admin/products"),
+          fetch("/api/admin/brand"),
+          fetch("/api/admin/categories"),
         ]);
 
         const [pData, bData, cData] = await Promise.all([
@@ -113,7 +113,7 @@ export default function ProductsPage() {
     if (!confirm(`Update ${selected.length} products?`)) return;
 
     try {
-      const res = await fetch("/api/products/bulk-update", {
+      const res = await fetch("/api/admin/products/bulk-update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: selected, flags }),
@@ -123,7 +123,7 @@ export default function ProductsPage() {
       if (data.success) {
         alert(`✅ ${data.updatedCount ?? "Some"} products updated!`);
         // refresh products
-        const refreshed = await fetch("/api/products").then((r) => r.json());
+        const refreshed = await fetch("/api/admin/products").then((r) => r.json());
         if (refreshed.success) setProducts(refreshed.products || []);
         setSelected([]);
         // reset bulk flags (optional)
@@ -341,7 +341,7 @@ export default function ProductsPage() {
                       onClick={async () => {
                         if (!confirm("Delete this product?")) return;
                         try {
-                          const res = await fetch(`/api/products/delete/${p._id}`, { method: "DELETE" });
+                          const res = await fetch(`/api/admin/products/delete/${p._id}`, { method: "DELETE" });
                           const d = await res.json();
                           if (d.success) {
                             setProducts((prev) => prev.filter((x) => x._id !== p._id));

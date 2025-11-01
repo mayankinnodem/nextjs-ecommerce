@@ -27,7 +27,7 @@ export default function AddBrandPage() {
     formData.append("data", JSON.stringify(form));
     if (image) formData.append("image", image); // ✅ key = "image"
 
-    const res = await fetch("/api/brand", {
+    const res = await fetch("/api/admin/brand", {
       method: "POST",
       body: formData,
     });
