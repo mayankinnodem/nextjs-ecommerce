@@ -40,4 +40,4 @@ export async function PUT(req) {
       { status: 500 }
     );
   }
-}7
+}

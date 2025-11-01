@@ -20,8 +20,6 @@ export default function UsersPage() {
       if (data.success) {
         setUsers(data.users);
         setTotal(data.total);
-      } else {
-        console.error(data.message);
       }
     } catch (err) {
       console.error(err);
@@ -33,6 +31,13 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers();
   }, [search, page]);
+
+
+  const getProfileCompletion = (u) => {
+    const fields = ["name", "email", "phone", "gender", "address", "dob"];
+    const filled = fields.filter((f) => u?.[f]).length;
+    return Math.round((filled / fields.length) * 100);
+  };
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
@@ -73,36 +78,74 @@ export default function UsersPage() {
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Email</th>
               <th className="px-4 py-2">Phone</th>
-              <th className="px-4 py-2">Role</th>
+              <th className="px-4 py-2">Profile %</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
-              <tr key={u._id} className="border-b">
-                <td className="px-4 py-2">{u._id}</td>
-                <td className="px-4 py-2">{u.name}</td>
-                <td className="px-4 py-2">{u.email}</td>
-                <td className="px-4 py-2">{u.phone}</td>
-                <td className="px-4 py-2">{u.role}</td>
-                <td className="px-4 py-2 flex gap-3">
-                  <Link href={`/admin-dashboard/users/${u._id}`} className="text-blue-600 hover:underline">View</Link>
-                  <button onClick={() => handleDelete(u._id)} className="text-red-600 hover:underline">Delete</button>
-                </td>
-              </tr>
-            ))}
+            {users.map((u) => {
+              const percent = getProfileCompletion(u);
+
+              return (
+                <tr key={u._id} className="border-b hover:bg-gray-50 transition">
+                  <td className="px-4 py-2">{u._id}</td>
+                  <td className="px-4 py-2">{u.name}</td>
+                  <td className="px-4 py-2">{u.email}</td>
+                  <td className="px-4 py-2">{u.phone}</td>
+
+                  {/* Profile completion */}
+                  <td className="px-4 py-2">
+                    <div className="flex flex-col gap-1 w-32">
+                      <div className="w-full bg-gray-300 rounded h-2 overflow-hidden">
+                        <div
+                          className="bg-green-600 h-2"
+                          style={{ width: `${percent}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">
+                        {percent}%
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-4 py-2 flex gap-3">
+
+  {/* ✅ View */}
+<Link href={`/admin-dashboard/users/${u._id}/view`} className="text-blue-600">
+  View
+</Link>
+<Link href={`/admin-dashboard/users/${u._id}/edit`} className="text-green-600">
+  Edit
+</Link>
+
+
+  {/* ✅ Delete */}
+  <button
+    onClick={() => handleDelete(u._id)}
+    className="text-red-600 hover:underline"
+  >
+    Delete
+  </button>
+</td>
+
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-4 flex gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+        <div className="mt-4 flex gap-2 flex-wrap">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <button
               key={p}
               onClick={() => setPage(p)}
-              className={`px-3 py-1 border rounded ${p === page ? "bg-blue-600 text-white" : "bg-white"}`}
+              className={`px-3 py-1 border rounded ${
+                p === page ? "bg-blue-600 text-white" : "bg-white"
+              }`}
             >
               {p}
             </button>
