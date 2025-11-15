@@ -3,6 +3,13 @@ import mongoose from "mongoose";
 const BrandSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,      // ✅ Slug must be unique
+      lowercase: true,
+      trim: true,
+    },
     description: { type: String, default: "" },
     image: {
       url: { type: String, required: true },

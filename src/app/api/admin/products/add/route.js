@@ -1,18 +1,28 @@
+// ✅ api/admin/products/add/route.js
+
 import { connectDB } from "@/lib/dbConnect";
 import Product from "@/models/Product";
 import { v2 as cloudinary } from "cloudinary";
 
-// ✅ Ensure it runs in Node.js (not Edge)
+// ✅ Slug helper
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+// ✅ Ensure Node.js runtime
 export const runtime = "nodejs";
 
-// ✅ Cloudinary configuration
+// ✅ Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ✅ Helper to upload image buffer to Cloudinary
+// ✅ Helper → Upload to cloudinary
 async function uploadToCloudinary(buffer, folder = "products") {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream({ folder }, (error, result) => {
@@ -25,61 +35,108 @@ async function uploadToCloudinary(buffer, folder = "products") {
 
 export const POST = async (req) => {
   try {
-    // ✅ Connect to DB
     await connectDB();
 
-    // ✅ Parse FormData
     const formData = await req.formData();
+
+    if (!formData.get("data")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing product data" }),
+        { status: 400 }
+      );
+    }
+
     const data = JSON.parse(formData.get("data"));
 
-    // ✅ Create new product object
+    // ✅ Required validation
+    if (!data.name || !data.category || !data.price) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "name, category, and price are required",
+        }),
+        { status: 400 }
+      );
+    }
+
+    // ✅ Auto calculate salePrice
+    const salePrice =
+      data.salePrice
+        ? Number(data.salePrice)
+        : data.discount
+        ? Number(data.price) - Number(data.discount)
+        : Number(data.price);
+
+    // ✅ Tags format
+    const formattedTags =
+      typeof data.tags === "string"
+        ? data.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : data.tags || [];
+
+    // ✅ Create product
     const product = new Product({
       name: data.name,
+      slug: slugify(data.name), // ✅ auto-slug
       description: data.description || "",
+
+      // ✅ category = ObjectId
       category: data.category,
+      
+      sku: data.sku || "",
+
+      // ✅ subCategory remains String
       subCategory: data.subCategory || "",
-      brand: data.brand || "",
+
+      // ✅ brand = ObjectId
+      brand: data.brand || null,
+
       gender: data.gender || "Unisex",
+
       price: Number(data.price) || 0,
       discount: Number(data.discount) || 0,
-      salePrice: data.salePrice
-        ? Number(data.salePrice)
-        : Number(data.price) || 0,
+      salePrice,
+
       stock: Number(data.stock) || 0,
       minOrder: Number(data.minOrder) || 1,
-      attributes: data.attributes || [], // ✅ Added missing field
-      tags:
-        typeof data.tags === "string"
-          ? data.tags.split(",").map((t) => t.trim())
-          : data.tags || [],
+
+      attributes: data.attributes || [],
+      tags: formattedTags,
+
       images: [],
+
       isTrending: !!data.isTrending,
       isFeatured: !!data.isFeatured,
       isNewArrival: !!data.isNewArrival,
+
       season: data.season || "All",
       status: data.status || "active",
-      publishDate: data.publishDate ? new Date(data.publishDate) : Date.now(),
+
+      publishDate: data.publishDate
+        ? new Date(data.publishDate)
+        : Date.now(),
     });
 
-    // ✅ Upload all images to Cloudinary
+    // ✅ Upload images
     const images = formData.getAll("images");
 
     for (const img of images) {
-      const arrayBuffer = await img.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+      if (img && img.size > 0) {
+        const buffer = Buffer.from(await img.arrayBuffer());
+        const result = await uploadToCloudinary(buffer);
 
-      const result = await uploadToCloudinary(buffer, "products");
-
-      product.images.push({
-        url: result.secure_url,
-        public_id: result.public_id,
-      });
+        product.images.push({
+          url: result.secure_url,
+          public_id: result.public_id,
+        });
+      }
     }
 
-    // ✅ Save to DB
+    // ✅ Save product
     await product.save();
 
-    // ✅ Return success
     return new Response(
       JSON.stringify({ success: true, product }),
       { status: 201, headers: { "Content-Type": "application/json" } }
@@ -87,6 +144,7 @@ export const POST = async (req) => {
 
   } catch (err) {
     console.error("❌ Failed to add product:", err);
+
     return new Response(
       JSON.stringify({ success: false, error: err.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }

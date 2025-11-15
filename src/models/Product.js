@@ -3,15 +3,35 @@ import mongoose from "mongoose";
 const ProductSchema = new mongoose.Schema(
   {
     // Basic Info
-    name: { type: String },
+    name: { type: String, required: true },
+    slug: { type: String, unique: true, required: true },
     description: { type: String },
-    category: { type: String },
-    subCategory: { type: String },
-    brand: { type: String },
-    gender: { type: String, enum: ["Men", "Women", "Unisex"], default: "Unisex" },
+    sku: { type: String },
+
+    // ✅ category → ObjectId
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
+
+    // ✅ ⛔ DO NOT CHANGE — subCategory remains STRING
+    subCategory: { type: String }, // ✅ you asked to keep it same
+
+    // ✅ brand → ObjectId
+    brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+    },
+
+    gender: {
+      type: String,
+      enum: ["Men", "Women", "Unisex"],
+      default: "Unisex",
+    },
 
     // Pricing
-    price: { type: Number },
+    price: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     salePrice: { type: Number },
 
@@ -19,7 +39,7 @@ const ProductSchema = new mongoose.Schema(
     stock: { type: Number, default: 0 },
     minOrder: { type: Number, default: 1 },
 
-    // ✅ Attributes (added)
+    // Attributes
     attributes: [
       {
         name: { type: String },
@@ -45,11 +65,18 @@ const ProductSchema = new mongoose.Schema(
     season: { type: String, default: "All" },
 
     // Status
-    status: { type: String, enum: ["active", "inactive"], default: "active" },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
+
     publishDate: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
-const Product = mongoose.models.Product || mongoose.model("Product", ProductSchema);
+const Product =
+  mongoose.models.Product || mongoose.model("Product", ProductSchema);
+
 export default Product;

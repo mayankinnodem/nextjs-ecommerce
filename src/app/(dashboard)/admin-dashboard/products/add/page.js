@@ -1,14 +1,24 @@
+// ✅ Full Updated Add Product Page - brand & category store _id
 "use client";
 
 import { useState, useEffect } from "react";
+
+// ✅ Define HERE
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 export default function AddProductPage() {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    category: "",
-    subCategory: "",
-    brand: "",
+    slug: "",
+    category: "", // ✅ store category ID
+    subCategory: "", // ✅ untouched string
+    brand: "", // ✅ store brand ID
     gender: "Unisex",
     price: "",
     discount: "",
@@ -35,7 +45,6 @@ export default function AddProductPage() {
   const [attributes, setAttributes] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Fetch brands, categories, attributes
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -62,7 +71,6 @@ export default function AddProductPage() {
     fetchData();
   }, []);
 
-  // ✅ Handle checkbox arrays
   const handleCheckbox = (field, value) => {
     setForm((prev) => {
       const exists = prev[field].includes(value);
@@ -75,7 +83,6 @@ export default function AddProductPage() {
     });
   };
 
-  // ✅ Handle dynamic attribute
   const handleAttributeChange = (attrName, value) => {
     setForm((prev) => {
       const updated = [...prev.attributes];
@@ -89,7 +96,6 @@ export default function AddProductPage() {
     });
   };
 
-  // ✅ Handle image upload with preview
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (form.images.length + files.length > 5) {
@@ -121,14 +127,12 @@ export default function AddProductPage() {
     });
   };
 
-  // ✅ Calculate sale price safely
   const calculateSalePrice = () => {
     const price = parseFloat(form.price) || 0;
     const discount = parseFloat(form.discount) || 0;
     return price - (price * discount) / 100;
   };
 
-  // ✅ Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -181,10 +185,8 @@ export default function AddProductPage() {
     <div className="text-gray-900">
       <h2 className="text-3xl font-bold mb-6">Add Product</h2>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow rounded-lg p-6 space-y-8"
-      >
+      <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-8">
+
         {/* ✅ Basic Info */}
         <section>
           <h3 className="text-xl font-semibold mb-3">Basic Information</h3>
@@ -193,7 +195,20 @@ export default function AddProductPage() {
             type="text"
             placeholder="Product Name"
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => {
+              const name = e.target.value;
+              const slug = slugify(name);
+              setForm({ ...form, name, slug });
+            }}
+            className="w-full border rounded px-3 py-2 mb-3"
+            required
+          />
+
+          <input
+            type="text"
+            placeholder="Slug"
+            value={form.slug}
+            onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })}
             className="w-full border rounded px-3 py-2 mb-3"
             required
           />
@@ -202,22 +217,19 @@ export default function AddProductPage() {
             placeholder="Description"
             rows={3}
             value={form.description}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
             className="w-full border rounded px-3 py-2 mb-3"
           />
 
+          {/* ✅ Select Category (store _id) */}
           <select
             value={form.category}
-            onChange={(e) =>
-              setForm({ ...form, category: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
             className="w-full border rounded px-3 py-2 mb-3"
           >
             <option value="">Select Category</option>
             {categories.map((cat) => (
-              <option key={cat._id} value={cat.name}>
+              <option key={cat._id} value={cat._id}>
                 {cat.name}
               </option>
             ))}
@@ -227,12 +239,11 @@ export default function AddProductPage() {
             type="text"
             placeholder="Sub-category"
             value={form.subCategory}
-            onChange={(e) =>
-              setForm({ ...form, subCategory: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, subCategory: e.target.value })}
             className="w-full border rounded px-3 py-2 mb-3"
           />
 
+          {/* ✅ Select Brand (store _id) */}
           <select
             value={form.brand}
             onChange={(e) => setForm({ ...form, brand: e.target.value })}
@@ -240,12 +251,11 @@ export default function AddProductPage() {
           >
             <option value="">Select Brand</option>
             {brands.map((b) => (
-              <option key={b._id} value={b.name}>
+              <option key={b._id} value={b._id}>
                 {b.name}
               </option>
             ))}
           </select>
-
           <select
             value={form.gender}
             onChange={(e) => setForm({ ...form, gender: e.target.value })}
@@ -262,33 +272,46 @@ export default function AddProductPage() {
           <h3 className="text-xl font-semibold mb-3">Pricing</h3>
           <div className="grid grid-cols-2 gap-3">
             <input
-              type="number"
-              placeholder="Price"
-              value={form.price}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  price: e.target.value ? parseFloat(e.target.value) : "",
-                })
-              }
-              className="w-full border rounded px-3 py-2"
-              required
-            />
+  type="number"
+  placeholder="Price"
+  value={form.price}
+  onChange={(e) => {
+    let val = e.target.value;
+    // ✅ Only allow 2 decimal
+    val = val.includes(".")
+      ? val.split(".")[0] + "." + val.split(".")[1].slice(0, 2)
+      : val;
+
+    setForm({
+      ...form,
+      price: val ? parseFloat(val) : "",
+    });
+  }}
+  step="0.01"
+  className="w-full border rounded px-3 py-2"
+  required
+/>
+
 
             <input
-              type="number"
-              placeholder="Discount (%)"
-              value={form.discount}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  discount: e.target.value
-                    ? parseFloat(e.target.value)
-                    : "",
-                })
-              }
-              className="w-full border rounded px-3 py-2"
-            />
+  type="number"
+  placeholder="Discount (%)"
+  value={form.discount}
+  onChange={(e) => {
+    let val = e.target.value;
+    val = val.includes(".")
+      ? val.split(".")[0] + "." + val.split(".")[1].slice(0, 2)
+      : val;
+
+    setForm({
+      ...form,
+      discount: val ? parseFloat(val) : "",
+    });
+  }}
+  step="0.01"
+  className="w-full border rounded px-3 py-2"
+/>
+
           </div>
 
           <div className="mt-2 text-gray-700">

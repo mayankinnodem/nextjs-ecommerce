@@ -147,11 +147,11 @@ export default function ProductsPage() {
   };
 
   // helper to display categories for a product (robust)
-  const showCategories = (p) => {
-    if (Array.isArray(p.categories)) return p.categories.join(", ");
-    if (p.category) return p.category;
-    return "-";
-  };
+  // const showCategories = (p) => {
+  //   if (Array.isArray(p.categories)) return p.categories.join(", ");
+  //   if (p.category) return p.category;
+  //   return "-";
+  // };
 
   if (loading) return <p className="text-gray-700">Loading products...</p>;
   if (error) return <p className="text-red-600">{error}</p>;
@@ -230,17 +230,18 @@ export default function ProductsPage() {
 
         {/* Brand dropdown */}
         <select
-          value={bulkFlags.brand}
-          onChange={(e) => setBulkFlags({ ...bulkFlags, brand: e.target.value })}
-          className="border px-2 py-1 rounded"
-        >
-          <option value="">Set Brand (optional)</option>
-          {brands.map((b) => (
-            <option key={b._id || b.id || b.name} value={b.name || b._id}>
-              {b.name || b}
-            </option>
-          ))}
-        </select>
+  value={bulkFlags.categories}
+  onChange={(e) => setBulkFlags({ ...bulkFlags, categories: e.target.value })}
+  className="border px-2 py-1 rounded"
+>
+  <option value="">Select Category (optional)</option>
+  {categories.map((c) => (
+    <option key={c._id} value={c._id}>
+      {c.name}
+    </option>
+  ))}
+</select>
+
         <select
   value={bulkFlags.categories}
   onChange={(e) =>
@@ -305,9 +306,7 @@ export default function ProductsPage() {
                       className="w-4 h-4"
                     />
                   </td>
-
                   <td className="px-4 py-3 align-top">{i + 1}</td>
-
                   <td className="px-4 py-3">
                     {p.images?.[0]?.url || p.images?.[0] ? (
                       <img
@@ -319,12 +318,20 @@ export default function ProductsPage() {
                       <span className="text-gray-400">No Image</span>
                     )}
                   </td>
-
                   <td className="px-4 py-3 align-top">{p.name}</td>
                   <td className="px-4 py-3 align-top">₹{p.salePrice ?? p.price}</td>
                   <td className="px-4 py-3 align-top">{p.discount ? p.discount + "%" : "-"}</td>
-                  <td className="px-4 py-3 align-top">{p.brand ?? "-"}</td>
-                  <td className="px-4 py-3 align-top">{showCategories(p)}</td>
+                 <td className="px-4 py-3 align-top">
+  {brands.find((b) => b._id === p.brand)?.name || "-"}
+</td>
+<td className="px-4 py-3 align-top">
+  {Array.isArray(p.categories)
+    ? p.categories
+        .map((id) => categories.find((c) => c._id === id)?.name || "")
+        .filter(Boolean)
+        .join(", ")
+    : categories.find((c) => c._id === p.category)?.name || "-"}
+</td>
                   <td className="px-4 py-3 align-top">{p.stock ?? "-"}</td>
 
                   <td className="px-4 py-3 align-top">

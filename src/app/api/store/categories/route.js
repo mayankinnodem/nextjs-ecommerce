@@ -20,35 +20,3 @@ export async function GET() {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
-
-// 🟡 POST -> Add new category
-export async function POST(req) {
-  try {
-    await connectDB();
-
-    const formData = await req.formData();
-    const categoryData = JSON.parse(formData.get("data"));
-
-    // Upload image directly to Cloudinary
-    const file = formData.get("image");
-    if (file && file.name) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const imageData = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "categories" },
-          (err, result) => {
-            if (err) reject(err);
-            else resolve({ url: result.secure_url, public_id: result.public_id });
-          }
-        );
-        stream.end(buffer);
-      });
-      categoryData.image = imageData;
-    }
-
-    const newCategory = await Category.create(categoryData);
-    return NextResponse.json({ success: true, category: newCategory });
-  } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
-}

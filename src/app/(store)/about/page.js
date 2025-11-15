@@ -1,10 +1,10 @@
-import AboutSections from '@/components/AboutSections'
+import AboutSection from '@/components/AboutSection'
 import React from 'react'
 
 const page = () => {
   return (
     <div>
-      <AboutSections/>
+      <AboutSection/>
     </div>
   )
 }

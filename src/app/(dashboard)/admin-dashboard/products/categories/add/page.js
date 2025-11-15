@@ -1,13 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // ✅ import
+import { useRouter } from "next/navigation";
 
 export default function AddCategoryPage() {
-  const router = useRouter(); // ✅ initialize router
-  const [form, setForm] = useState({ name: "", description: "", status: "active" });
+  const router = useRouter();
+  const [form, setForm] = useState({ name: "", slug: "", description: "", status: "active" });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+
+  const generateSlug = (text) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+  };
+
+  const handleNameChange = (e) => {
+    const nameValue = e.target.value;
+    setForm({
+      ...form,
+      name: nameValue,
+      slug: generateSlug(nameValue),
+    });
+  };
+
+  const handleSlugChange = (e) => {
+    setForm({ ...form, slug: e.target.value });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -19,7 +42,7 @@ export default function AddCategoryPage() {
 
     if (data.success) {
       alert("✅ Category Added!");
-      router.push("/admin-dashboard/products/categories"); // ✅ redirect
+      router.push("/admin-dashboard/products/categories");
     } else {
       alert("❌ " + data.error);
     }
@@ -41,10 +64,20 @@ export default function AddCategoryPage() {
         type="text"
         placeholder="Category Name"
         value={form.name}
-        onChange={(e) => setForm({ ...form, name: e.target.value })}
+        onChange={handleNameChange}
         className="w-full border px-3 py-2 rounded"
         required
       />
+
+      <input
+        type="text"
+        placeholder="Slug"
+        value={form.slug}
+        onChange={handleSlugChange}
+        className="w-full border px-3 py-2 rounded"
+        required
+      />
+
       <textarea
         placeholder="Description"
         value={form.description}

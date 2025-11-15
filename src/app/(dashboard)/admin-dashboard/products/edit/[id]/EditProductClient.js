@@ -1,14 +1,27 @@
+// app/(dashboard)/admin-dashboard/products/edit/[id]/EditProductClient.js
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+/* ✅ SLUGIFY: place outside the component */
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 export default function EditProductClient({ id }) {
   const router = useRouter();
+
+  /* ✅ LOCAL STATE */
+  const [slugEdited, setSlugEdited] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     description: "",
+    slug: "",
     category: "",
     subCategory: "",
     brand: "",
@@ -37,9 +50,8 @@ export default function EditProductClient({ id }) {
   const [categories, setCategories] = useState([]);
   const [attributes, setAttributes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [initialImages, setInitialImages] = useState([]);
 
-  // ✅ Fetch brands, categories, attributes, and product data
+  /* ✅ FETCH PRODUCT + CATEGORIES + ATTRIBUTES + BRANDS */
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,27 +76,25 @@ export default function EditProductClient({ id }) {
         if (productData.success) {
           const product = productData.product;
 
-          setForm({
-            ...form,
+          setForm((prev) => ({
+            ...prev,
             ...product,
+            slug: product.slug || "",
             images:
               product.images?.map((img) =>
                 typeof img === "string" ? { url: img } : img
               ) || [],
-          });
-
-          setInitialImages(product.images || []);
+          }));
         }
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error: ", err);
       }
     };
 
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // ✅ Handle attribute update
+  /* ✅ ATTRIBUTES HANDLER */
   const handleAttributeChange = (attrName, value) => {
     setForm((prev) => {
       const updated = [...prev.attributes];
@@ -95,7 +105,7 @@ export default function EditProductClient({ id }) {
     });
   };
 
-  // ✅ Handle image upload
+  /* ✅ IMAGE UPLOAD */
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (form.images.length + files.length > 5) {
@@ -114,6 +124,7 @@ export default function EditProductClient({ id }) {
     }));
   };
 
+  /* ✅ IMAGE REMOVE */
   const removeImage = (index) => {
     setForm((prev) => {
       const updated = [...prev.images];
@@ -122,6 +133,7 @@ export default function EditProductClient({ id }) {
     });
   };
 
+  /* ✅ IMAGE POSITION CHANGE */
   const moveImage = (from, to) => {
     if (to < 0 || to >= form.images.length) return;
     setForm((prev) => {
@@ -132,36 +144,37 @@ export default function EditProductClient({ id }) {
     });
   };
 
+  /* ✅ AUTO CALC SALE PRICE */
   const calculateSalePrice = () => {
     const price = parseFloat(form.price) || 0;
     const discount = parseFloat(form.discount) || 0;
     return price - (price * discount) / 100;
   };
 
-  // ✅ Handle submit (PUT)
+  /* ✅ SUBMIT */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const formData = new FormData();
+
       const productData = {
         ...form,
         salePrice: calculateSalePrice(),
-        images: undefined, // handled separately
+        images: undefined,
       };
 
       formData.append("data", JSON.stringify(productData));
 
-      // Attach new image files (if any)
       form.images.forEach((img) => {
         if (img.file) formData.append("images", img.file);
       });
 
-      // Attach info about existing images to retain
       const existingUrls = form.images
         .filter((img) => !img.file && img.url)
         .map((img) => img.url);
+
       formData.append("existingImages", JSON.stringify(existingUrls));
 
       const res = await fetch(`/api/admin/products/${id}`, {
@@ -175,17 +188,16 @@ export default function EditProductClient({ id }) {
         alert("✅ Product Updated Successfully!");
         router.push("/admin-dashboard/products");
       } else {
-        alert("❌ " + (data.error || "Something went wrong."));
+        alert("❌ " + data.error);
       }
     } catch (err) {
-      console.error("Update failed:", err);
       alert("⚠️ Error updating product!");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Form UI (same as AddProduct)
+  /* ✅ RENDER UI */
   return (
     <div className="text-gray-900">
       <h2 className="text-3xl font-bold mb-6">Edit Product</h2>
@@ -194,7 +206,7 @@ export default function EditProductClient({ id }) {
         onSubmit={handleSubmit}
         className="bg-white shadow rounded-lg p-6 space-y-8"
       >
-        {/* Basic Info */}
+        {/* BASIC */}
         <section>
           <h3 className="text-xl font-semibold mb-3">Basic Information</h3>
 
@@ -202,10 +214,29 @@ export default function EditProductClient({ id }) {
             type="text"
             placeholder="Product Name"
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => {
+              const newName = e.target.value;
+              setForm((prev) => ({
+                ...prev,
+                name: newName,
+                slug: slugEdited ? prev.slug : slugify(newName),
+              }));
+            }}
             className="w-full border rounded px-3 py-2 mb-3"
             required
           />
+
+          <input
+            type="text"
+            placeholder="Slug"
+            value={form.slug}
+            onChange={(e) => {
+              setSlugEdited(true);
+              setForm((prev) => ({ ...prev, slug: slugify(e.target.value) }));
+            }}
+            className="w-full border rounded px-3 py-2 mb-3"
+          />
+
 
           <textarea
             placeholder="Description"
@@ -222,7 +253,7 @@ export default function EditProductClient({ id }) {
           >
             <option value="">Select Category</option>
             {categories.map((cat) => (
-              <option key={cat._id} value={cat.name}>
+              <option key={cat._id} value={cat._id}>
                 {cat.name}
               </option>
             ))}
@@ -243,7 +274,7 @@ export default function EditProductClient({ id }) {
           >
             <option value="">Select Brand</option>
             {brands.map((b) => (
-              <option key={b._id} value={b.name}>
+              <option key={b._id} value={b._id}>
                 {b.name}
               </option>
             ))}

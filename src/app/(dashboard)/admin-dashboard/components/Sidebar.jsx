@@ -20,9 +20,12 @@ const navItems = [
   },
   { name: "Orders", href: "/admin-dashboard/orders" },
   { name: "Users", href: "/admin-dashboard/users" },
+  { name: "Sections", href: "/admin-dashboard/sections" },
   { name: "About Us", href: "/admin-dashboard/about-us" },
+  { name: "Contact Form", href: "/admin-dashboard/contact-form" },
   { name: "Contact Us", href: "/admin-dashboard/contact-us" },
   { name: "Reviews", href: "/admin-dashboard/reviews" },
+  { name: "FAQ", href: "/admin-dashboard/faq" },
   { name: "Settings", href: "/admin-dashboard/settings" },
 ];
 

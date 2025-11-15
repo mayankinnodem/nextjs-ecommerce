@@ -1,16 +1,17 @@
+// ✅ src/app/api/admin/categories/route.js
+
 import { NextResponse } from "next/server";
 import Category from "@/models/Category";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
 
-// Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// 🟢 GET -> All categories
+// ✅ GET -> All categories
 export async function GET() {
   try {
     await connectDB();
@@ -21,7 +22,7 @@ export async function GET() {
   }
 }
 
-// 🟡 POST -> Add new category
+// ✅ POST -> Add new category
 export async function POST(req) {
   try {
     await connectDB();
@@ -29,7 +30,6 @@ export async function POST(req) {
     const formData = await req.formData();
     const categoryData = JSON.parse(formData.get("data"));
 
-    // Upload image directly to Cloudinary
     const file = formData.get("image");
     if (file && file.name) {
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -52,3 +52,5 @@ export async function POST(req) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+

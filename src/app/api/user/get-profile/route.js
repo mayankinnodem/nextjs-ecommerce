@@ -7,7 +7,7 @@ export async function GET(req) {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id")?.trim();
+    const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
@@ -16,7 +16,7 @@ export async function GET(req) {
       );
     }
 
-    const user = await User.findById(id).select("-password"); // Exclude password for safety
+    const user = await User.findById(id).select("-password");
 
     if (!user) {
       return NextResponse.json(
@@ -25,7 +25,17 @@ export async function GET(req) {
       );
     }
 
-    return NextResponse.json({ success: true, user }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        user: {
+          ...user._doc,
+          profilePic: user.profilePic?.url || "",  // <-- ALWAYS send URL only
+        },
+      },
+      { status: 200 }
+    );
+
   } catch (err) {
     console.error("❌ Error fetching user:", err);
     return NextResponse.json(

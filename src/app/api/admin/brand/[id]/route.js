@@ -1,3 +1,4 @@
+// /api/admin/brand/[id]/route.js
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
@@ -10,21 +11,36 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// 🟢 GET -> Single Brand
+// ✅ helper → generate slug
+const generateSlug = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
+// ✅ GET → fetch brand
 export async function GET(req, { params }) {
   try {
     await connectDB();
     const brand = await Brand.findById(params.id);
     if (!brand) {
-      return NextResponse.json({ success: false, error: "brand not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Brand not found" },
+        { status: 404 }
+      );
     }
     return NextResponse.json({ success: true, brand });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// 🟡 PUT -> Update brand
+// ✅ PUT → update brand
 export async function PUT(req, { params }) {
   try {
     await connectDB();
@@ -32,7 +48,11 @@ export async function PUT(req, { params }) {
     const formData = await req.formData();
     const updateData = JSON.parse(formData.get("data"));
 
-    // Upload image directly to Cloudinary
+    // ✅ Auto generate slug if not provided from UI
+    if (!updateData.slug && updateData.name) {
+      updateData.slug = generateSlug(updateData.name);
+    }
+
     const file = formData.get("image");
     if (file && file.name) {
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -46,38 +66,56 @@ export async function PUT(req, { params }) {
         );
         stream.end(buffer);
       });
+
       updateData.image = imageData;
     }
 
-    const updatedBrand = await Brand.findByIdAndUpdate(params.id, updateData, { new: true });
+    const updatedBrand = await Brand.findByIdAndUpdate(
+      params.id,
+      updateData,
+      { new: true }
+    );
+
     if (!updatedBrand) {
-      return NextResponse.json({ success: false, error: "Brand not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Brand not found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ success: true, brand: updatedBrand });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// 🔴 DELETE -> Remove brand
+// ✅ DELETE → delete brand
 export async function DELETE(req, { params }) {
   try {
     await connectDB();
     const deleted = await Brand.findByIdAndDelete(params.id);
+
     if (!deleted) {
-      return NextResponse.json({ success: false, error: "Brand not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Brand not found" },
+        { status: 404 }
+      );
     }
 
-    // Optional: Delete image from Cloudinary
     if (deleted.image?.public_id) {
       cloudinary.uploader.destroy(deleted.image.public_id).catch((err) => {
-        console.error("Failed to delete image from Cloudinary:", err);
+        console.error("Cloudinary delete failed:", err);
       });
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500 }
+    );
   }
 }

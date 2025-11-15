@@ -1,94 +1,83 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FaHeart } from "react-icons/fa";
+import { useState } from "react";
+import Link from "next/link";
 
 export default function ProductCard({ product }) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
-  // ✅ Always use MongoDB _id
-  const productId = product._id;
+  const productId = product?._id;
+  const categorySlug = product?.categorySlug || "unknown";
+  const productSlug = product?.productSlug || "product";
 
-  // Check if product is wishlisted
-  useEffect(() => {
-    const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
-    setIsWishlisted(wishlist.some((item) => item._id === productId));
-  }, [productId]);
+  const image = product?.images?.[0]?.url || "/placeholder.png";
 
-  // Toggle wishlist
-  const toggleWishlist = async () => {
-    try {
-      let wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
-      const index = wishlist.findIndex((item) => item._id === productId);
+  const price = Number(product?.price) || 0;
+  const discount = Number(product?.discount) || 0;
+  const salePrice =
+    product?.salePrice || price - Math.round((price * discount) / 100);
 
-      if (index !== -1) {
-        wishlist.splice(index, 1);
-        setIsWishlisted(false);
-      } else {
-        wishlist.push({ _id: productId, name: product.name, price: product.price, images: product.images });
-        setIsWishlisted(true);
-      }
-
-      localStorage.setItem("wishlist", JSON.stringify(wishlist));
-
-      // Update backend if user logged in
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user?._id) {
-        await fetch("/api/user/wishlist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user._id,
-            product: { _id: productId, name: product.name, price: product.price, images: product.images },
-          }),
-        });
-      }
-    } catch (err) {
-      console.error("Wishlist error:", err);
-    }
-  };
-
-  // Add to cart
   const handleAddToCart = () => {
-    try {
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const existing = cart.find((item) => item._id === productId);
+    setIsAdding(true);
 
-      if (existing) existing.quantity += 1;
-      else cart.push({ _id: productId, ...product, quantity: 1 });
+    // get existing cart
+    const stored = JSON.parse(localStorage.getItem("cart") || "[]");
 
-      localStorage.setItem("cart", JSON.stringify(cart));
-      alert("✅ Added to cart!");
-    } catch (err) {
-      console.error("Cart error:", err);
+    // check exists
+    const existing = stored.find((item) => item._id === productId);
+
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      stored.push({
+        ...product,
+        quantity: 1,
+      });
     }
+
+    localStorage.setItem("cart", JSON.stringify(stored));
+
+    setTimeout(() => {
+      setIsAdding(false);
+    }, 500);
   };
 
   return (
     <div className="relative border rounded-lg shadow hover:shadow-lg transition overflow-hidden bg-white">
-      <button
-        onClick={toggleWishlist}
-        className="absolute top-2 right-2 z-10 p-2 rounded-full bg-white/60 backdrop-blur-sm hover:bg-white"
-      >
-        <FaHeart
-          className={`text-2xl transition ${isWishlisted ? "text-red-500" : "text-transparent border border-black rounded-full"}`}
-          style={{ WebkitTextStroke: isWishlisted ? "none" : "1px black" }}
+      {/* Clickable Link */}
+      <Link href={`/${categorySlug}/${productSlug}`}>
+        <img
+          src={image}
+          alt={product?.name}
+          className="w-full h-48 object-cover cursor-pointer"
         />
-      </button>
-
-      <img src={product.images?.[0]?.url || "/placeholder.png"} alt={product.name} className="w-full h-48 object-cover" />
+      </Link>
 
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-800">{product.name}</h3>
-        <p className="text-gray-600">₹{Number(product.price).toLocaleString()}</p>
-        {product.discount > 0 && (
-          <p className="text-sm text-green-600">
-            {product.discount}% off – Sale: ₹{product.salePrice}
+        <Link href={`/${categorySlug}/${productSlug}`}>
+          <h3 className="text-lg font-semibold text-gray-800 line-clamp-1">
+            {product?.name}
+          </h3>
+        </Link>
+
+        <p className="text-gray-600 font-semibold text-lg">
+          ₹{salePrice.toLocaleString()}
+        </p>
+
+        {discount > 0 && (
+          <p className="text-sm text-red-500 line-through">
+            ₹{price.toLocaleString()}
           </p>
         )}
 
-        <button onClick={handleAddToCart} className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-          Add to Cart
+        {/* ✅ Add to Cart */}
+        <button
+          onClick={handleAddToCart}
+          disabled={isAdding}
+          className={`mt-3 w-full py-2 rounded-md text-white font-semibold transition
+          ${isAdding ? "bg-gray-400" : "bg-indigo-600 hover:bg-indigo-700"}`}
+        >
+          {isAdding ? "Adding..." : "Add to Cart"}
         </button>
       </div>
     </div>
