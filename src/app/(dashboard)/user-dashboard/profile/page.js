@@ -97,8 +97,7 @@ const handleSave = async () => {
   form.append("name", profile.name);
   form.append("email", profile.email);
   form.append("phone", profile.phone);
-  
-  // 🔥 Image file add करो (Base64 नहीं)
+
   if (fileInputRef.current?.files[0]) {
     form.append("profilePic", fileInputRef.current.files[0]);
   }
@@ -109,7 +108,28 @@ const handleSave = async () => {
   });
 
   const data = await res.json();
+
+  if (data.success) {
+    // Save updated user to localStorage
+    const updatedUser = {
+      _id: data.user._id,
+      phone: data.user.phone,
+      name: data.user.name,
+      profilePic: data.user.profilePic || "",
+    };
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    setProfile(data.user);
+    setEditMode(false);
+    showSuccess("Profile updated successfully!");
+  } else {
+    showError(data.message || "Update failed!");
+  }
+
+  setLoading(false);
 };
+
 
 
   // ✅ Helpers

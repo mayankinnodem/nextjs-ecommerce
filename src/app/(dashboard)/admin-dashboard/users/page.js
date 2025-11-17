@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -15,7 +16,9 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/admin/users?search=${search}&page=${page}&limit=${limit}`);
+      const res = await fetch(
+        `/api/admin/users?search=${search}&page=${page}&limit=${limit}`
+      );
       const data = await res.json();
       if (data.success) {
         setUsers(data.users);
@@ -31,7 +34,6 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers();
   }, [search, page]);
-
 
   const getProfileCompletion = (u) => {
     const fields = ["name", "email", "phone", "gender", "address", "dob"];
@@ -50,6 +52,7 @@ export default function UsersPage() {
       console.error(err);
     }
   };
+
 
   const totalPages = Math.ceil(total / limit);
 
@@ -74,26 +77,61 @@ export default function UsersPage() {
         <table className="w-full bg-white text-gray-900 shadow rounded-lg overflow-hidden">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-4 py-2">ID</th>
+              <th className="px-4 py-2">Profile</th>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Email</th>
               <th className="px-4 py-2">Phone</th>
+              <th className="px-4 py-2">Type</th>
               <th className="px-4 py-2">Profile %</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {users.map((u) => {
               const percent = getProfileCompletion(u);
 
               return (
-                <tr key={u._id} className="border-b hover:bg-gray-50 transition">
-                  <td className="px-4 py-2">{u._id}</td>
-                  <td className="px-4 py-2">{u.name}</td>
-                  <td className="px-4 py-2">{u.email}</td>
-                  <td className="px-4 py-2">{u.phone}</td>
+                <tr key={u._id} className="border-b hover:bg-gray-50">
+                  {/* Profile Image */}
+                  <td className="px-4 py-2">
+                    {u.profilePic?.url ? (
+                      <Image
+                        src={u.profilePic.url}
+                        width={48} 
+                        height={48}
+                        alt="Profile"
+                        className="w-12 h-12 rounded-full object-cover border"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                        <span className="text-xs">No Img</span>
+                      </div>
+                    )}
+                  </td>
 
-                  {/* Profile completion */}
+                  {/* Name */}
+                  <td className="px-4 py-2 font-semibold">
+                    {u.name || "—"}
+                  </td>
+
+                  {/* Email */}
+                  <td className="px-4 py-2">{u.email || "—"}</td>
+
+                  {/* Phone */}
+                  <td className="px-4 py-2">{u.phone || "—"}</td>
+
+                  {/* Account Type */}
+                  <td className="px-4 py-2">
+                    <span
+                      className={`px-2 py-1 text-sm rounded 
+                      ${u.accountType === "Admin" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}
+                    >
+                      {u.accountType || "Regular"}
+                    </span>
+                  </td>
+
+                  {/* Profile Completion */}
                   <td className="px-4 py-2">
                     <div className="flex flex-col gap-1 w-32">
                       <div className="w-full bg-gray-300 rounded h-2 overflow-hidden">
@@ -110,25 +148,27 @@ export default function UsersPage() {
 
                   {/* Actions */}
                   <td className="px-4 py-2 flex gap-3">
+                    <Link
+                      href={`/admin-dashboard/users/${u._id}/view`}
+                      className="text-blue-600"
+                    >
+                      View
+                    </Link>
 
-  {/* ✅ View */}
-<Link href={`/admin-dashboard/users/${u._id}/view`} className="text-blue-600">
-  View
-</Link>
-<Link href={`/admin-dashboard/users/${u._id}/edit`} className="text-green-600">
-  Edit
-</Link>
+                    <Link
+                      href={`/admin-dashboard/users/${u._id}/edit`}
+                      className="text-green-600"
+                    >
+                      Edit
+                    </Link>
 
-
-  {/* ✅ Delete */}
-  <button
-    onClick={() => handleDelete(u._id)}
-    className="text-red-600 hover:underline"
-  >
-    Delete
-  </button>
-</td>
-
+                    <button
+                      onClick={() => handleDelete(u._id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               );
             })}

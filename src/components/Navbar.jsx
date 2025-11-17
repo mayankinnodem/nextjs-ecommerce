@@ -151,7 +151,7 @@ export default function Header() {
                 >
                   {user.profilePic ? (
                     <img
-                      src={user.profilePic}
+                      src={user.profilePic.url}
                       alt={user.name || "User"}
                       className="w-7 h-7 rounded-full object-cover"
                     />

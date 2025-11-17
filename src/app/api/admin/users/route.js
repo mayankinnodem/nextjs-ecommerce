@@ -18,7 +18,11 @@ export async function GET(req) {
     }
 
     const users = await User.find(query, {
-      name: 1, email: 1, phone: 1, role: 1
+      name: 1,
+      email: 1,
+      phone: 1,
+      role: 1,
+      profilePic: 1,   // 🔥 THIS FIX
     })
       .skip((page - 1) * limit)
       .limit(Number(limit))
@@ -32,6 +36,7 @@ export async function GET(req) {
     return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
 }
+
 
 // DELETE: delete a user
 export async function DELETE(req) {
