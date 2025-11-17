@@ -88,42 +88,29 @@ export default function ProfilePage() {
   };
 
   // ✅ Save changes
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      if (!storedUser?._id) return showError("User not found. Please login again.");
+const handleSave = async () => {
+  setLoading(true);
 
-      const res = await fetch("/api/user/update-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
-      });
+  const form = new FormData();
 
-      const data = await res.json();
-      if (!data.success) return showError(data.message || "Failed to update profile");
+  form.append("_id", profile._id);
+  form.append("name", profile.name);
+  form.append("email", profile.email);
+  form.append("phone", profile.phone);
+  
+  // 🔥 Image file add करो (Base64 नहीं)
+  if (fileInputRef.current?.files[0]) {
+    form.append("profilePic", fileInputRef.current.files[0]);
+  }
 
-      setProfile(data.user);
-      setEditMode(false);
-      showSuccess("Profile updated successfully!");
+  const res = await fetch("/api/user/update-profile", {
+    method: "POST",
+    body: form,
+  });
 
-      // Update localStorage
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          _id: data.user._id,
-          phone: data.user.phone,
-          name: data.user.name || "",
-          profilePic: data.user.profilePic || "",
-          email: data.user.email || "",
-        })
-      );
-    } catch {
-      showError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const data = await res.json();
+};
+
 
   // ✅ Helpers
   const showError = (msg) => {

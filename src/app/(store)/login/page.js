@@ -66,7 +66,7 @@ export default function LoginPage() {
           _id: data.user._id,
           phone: data.user.phone,
           name: data.user.name || "",
-          profilePic: data.user.profilePic || "",
+          profilePic: data.user.profilePic?.url || "",
           // email: data.user.email || "",
         };
 
