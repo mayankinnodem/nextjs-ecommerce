@@ -1,16 +1,16 @@
-// src/app/(store)/[category_slug]/page.js
-
 import ProductCard from "@/components/shop/ProductCard";
 
 export default async function CategoryPage({ params }) {
-  const { category_slug } = await params;
+  const { category_slug } = params;
 
-  // ✅ Fetch products via existing STORE API
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "http://localhost:3000";
+
   const res = await fetch(
-    `/api/store/products?category_slug=${category_slug}`,
-    {
-      cache: "no-store",
-    }
+    `${baseUrl}/api/store/products?category_slug=${category_slug}`,
+    { cache: "no-store" }
   );
 
   let products = [];
@@ -34,7 +34,8 @@ export default async function CategoryPage({ params }) {
             <ProductCard
               key={product._id}
               product={product}
-              category_slug={category_slug}
+              /* ✅ YAHI SE URL FIX HOGA */
+              category_slug={product?.category?.slug}
             />
           ))}
         </div>
