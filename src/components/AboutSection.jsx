@@ -31,6 +31,7 @@ const AboutSection = () => {
   }, []);
 
   if (loading) return <p>Loading...</p>;
+  if (!about) return <p>No data found!</p>;
 
   return (
     <section className="py-20 bg-gradient-to-b from-white to-gray-100">
