@@ -1,5 +1,7 @@
 "use client";
+import Link from "next/link";
 // import { useSession } from "next-auth/react";
+
 import { useRouter } from "next/navigation";
 import { FaBoxOpen, FaHeart, FaUserCircle, FaShoppingBag } from "react-icons/fa";
 
