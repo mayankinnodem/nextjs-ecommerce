@@ -2,6 +2,7 @@
 import "../globals.css";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import ViewCartFloatingButton from "@/components/CartButton";
 
 export const metadata = {
   title: "RMK Leathers",
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
         </header>
         <main className="main-container bg-white">
           {children}
+          <ViewCartFloatingButton />
         </main>
         <footer>
           <Footer />
