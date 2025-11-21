@@ -1,14 +1,11 @@
-
 import { connectDB } from "@/lib/dbConnect";
 import ContactSection from "@/models/ContactSection";
 import { NextResponse } from "next/server";
 
-// ✅ GET — Public API (for frontend store)
 export async function GET() {
   try {
     await connectDB();
 
-    // Fetch the single contact section record
     const data = await ContactSection.findOne().lean();
 
     if (!data) {
@@ -18,11 +15,19 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ success: true, data });
-  } catch (e) {
-    console.error("Contact Section GET Error:", e);
+    return NextResponse.json({
+      success: true,
+      data,
+    });
+
+  } catch (error) {
+    console.error("Contact Section GET Error:", error);
+
     return NextResponse.json(
-      { success: false, error: e.message },
+      {
+        success: false,
+        error: error.message || "Server Error",
+      },
       { status: 500 }
     );
   }
