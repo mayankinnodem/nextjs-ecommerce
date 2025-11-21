@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 export default function Footer() {
   const [contact, setContact] = useState(null);
@@ -11,41 +11,59 @@ export default function Footer() {
     const fetchContact = async () => {
       try {
         const res = await fetch("/api/store/contact-section", { cache: "no-store" });
+
+        if (!res.ok) throw new Error("API failed");
+
         const json = await res.json();
-        if (json.success) setContact(json.data);
+        if (json.success && json.data) {
+          setContact(json.data);
+        }
       } catch (err) {
-        console.error("Footer fetch error:", err);
+        console.error("Footer fetch error:", err.message);
       } finally {
         setLoading(false);
       }
     };
+
     fetchContact();
   }, []);
 
-  if (loading)
+  if (loading) {
     return (
       <footer className="bg-gray-900 text-center py-10 text-gray-400">
         Loading footer...
       </footer>
     );
+  }
+
+  if (!contact) {
+    return (
+      <footer className="bg-gray-900 text-center py-10 text-red-400">
+        Footer data not found
+      </footer>
+    );
+  }
 
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-black to-gray-900 text-gray-300 pt-14">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
-        {/* Branding */}
+
+        {/* ✅ Branding */}
         <div>
-          {contact?.logo?.url && (
+          {contact.logo?.url && (
             <img
               src={contact.logo.url}
               alt="Logo"
               className="h-14 mb-4 object-contain"
             />
           )}
+
           <h2 className="text-2xl font-bold text-white mb-3">
-            {contact?.title || "Contact Us"}
+            {contact.title}
           </h2>
+
           <p className="text-sm leading-relaxed text-gray-400">
-            {contact?.description}
+            {contact.description}
           </p>
         </div>
 
@@ -71,26 +89,56 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Contact Info + Social */}
+        {/* ✅ Contact + Dynamic Social Links */}
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Get in Touch</h3>
+
           <div className="space-y-3 text-sm">
-            <p className="flex items-start gap-2"><MapPin size={16} /> {contact?.address}</p>
-            <p className="flex items-center gap-2"><Phone size={16} /> {contact?.phone}</p>
-            <p className="flex items-center gap-2"><Mail size={16} /> {contact?.email}</p>
+            {contact.address && (
+              <p className="flex items-start gap-2">
+                <MapPin size={16} /> {contact.address}
+              </p>
+            )}
+            {contact.phone && (
+              <p className="flex items-center gap-2">
+                <Phone size={16} /> {contact.phone}
+              </p>
+            )}
+            {contact.email && (
+              <p className="flex items-center gap-2">
+                <Mail size={16} /> {contact.email}
+              </p>
+            )}
           </div>
 
-          <div className="flex gap-4 mt-5">
-            <a href="#" className="hover:text-white transition"><Facebook size={20} /></a>
-            <a href="#" className="hover:text-white transition"><Instagram size={20} /></a>
-            <a href="#" className="hover:text-white transition"><Twitter size={20} /></a>
+          {/* ✅ SOCIAL LINKS FROM ADMIN PANEL */}
+          <div className="flex gap-4 mt-6 flex-wrap">
+            {contact.socialLinks?.map((social, index) => (
+              <a
+                key={index}
+                href={social.url}
+                target="_blank"
+                className="hover:scale-110 transition"
+                title={social.platform}
+              >
+                {social.icon?.url ? (
+                  <img
+                    src={social.icon.url}
+                    alt={social.platform}
+                    className="w-8 h-8 object-contain"
+                  />
+                ) : (
+                  <span className="text-sm">{social.platform}</span>
+                )}
+              </a>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
+      {/* Bottom bar */}
       <div className="mt-12 border-t border-gray-800 py-6 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} Innodem Private Limited. All Rights Reserved.
+        © {new Date().getFullYear()} {contact.title}. All Rights Reserved.
       </div>
     </footer>
   );

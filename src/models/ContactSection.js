@@ -1,4 +1,28 @@
+// src/models/ContactSection.js
 import mongoose from "mongoose";
+
+const SocialLinkSchema = new mongoose.Schema(
+  {
+    platform: {
+      type: String,
+      required: true,
+    },
+    url: {
+      type: String,
+      required: true,
+    },
+    icon: {
+      url: String,
+      public_id: String,
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
+  },
+  { _id: false }
+);
 
 const ContactSectionSchema = new mongoose.Schema(
   {
@@ -6,12 +30,10 @@ const ContactSectionSchema = new mongoose.Schema(
     subtitle: { type: String, default: "" },
     description: { type: String, default: "" },
 
-    // ✅ Contact Details
     address: { type: String, default: "" },
     phone: { type: String, default: "" },
     email: { type: String, default: "" },
 
-    // ✅ Branding
     logo: {
       url: String,
       public_id: String,
@@ -21,11 +43,11 @@ const ContactSectionSchema = new mongoose.Schema(
       public_id: String,
     },
 
-    // ✅ Form labels – optional
     formTitle: { type: String, default: "Contact Form" },
     formSubtitle: { type: String, default: "" },
 
-    // ✅ Extra Fields
+    socialLinks: [SocialLinkSchema],
+
     status: {
       type: String,
       enum: ["active", "inactive"],

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/dbConnect";
+import { v2 as cloudinary } from "cloudinary";
 import ContactSection from "@/models/ContactSection";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export async function PUT(req) {
@@ -14,59 +14,101 @@ export async function PUT(req) {
     await connectDB();
 
     const formData = await req.formData();
-    const jsonData = JSON.parse(formData.get("data"));
-    let section = await ContactSection.findOne();
+    const rawData = formData.get("data");
 
-    if (!section) {
-      section = new ContactSection(jsonData);
-    } else {
-      Object.assign(section, jsonData);
+    if (!rawData) {
+      return NextResponse.json(
+        { success: false, error: "No contact data provided" },
+        { status: 400 }
+      );
     }
 
-    // ✅ LOGO (optional)
+    let data = JSON.parse(rawData);
+
+    // ================= LOGO UPLOAD =================
     const logo = formData.get("logo");
-    if (logo && logo.name) {
+    if (logo && logo.size > 0) {
       const buffer = Buffer.from(await logo.arrayBuffer());
 
       const uploaded = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
+        cloudinary.uploader.upload_stream(
           { folder: "contact-section" },
           (err, result) => {
             if (err) reject(err);
             else resolve(result);
           }
-        );
-        stream.end(buffer);
+        ).end(buffer);
       });
 
-      section.logo = { url: uploaded.secure_url, public_id: uploaded.public_id };
+      data.logo = {
+        url: uploaded.secure_url,
+        public_id: uploaded.public_id,
+      };
     }
 
-    // ✅ FAVICON (optional)
+    // ================= FAVICON UPLOAD =================
     const favicon = formData.get("favicon");
-    if (favicon && favicon.name) {
+    if (favicon && favicon.size > 0) {
       const buffer = Buffer.from(await favicon.arrayBuffer());
 
       const uploaded = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
+        cloudinary.uploader.upload_stream(
           { folder: "contact-section" },
           (err, result) => {
             if (err) reject(err);
             else resolve(result);
           }
-        );
-        stream.end(buffer);
+        ).end(buffer);
       });
 
-      section.favicon = { url: uploaded.secure_url, public_id: uploaded.public_id };
+      data.favicon = {
+        url: uploaded.secure_url,
+        public_id: uploaded.public_id,
+      };
     }
 
-    await section.save();
+    // ================= SOCIAL ICONS =================
+    if (data.socialLinks && Array.isArray(data.socialLinks)) {
+      for (let i = 0; i < data.socialLinks.length; i++) {
+        const iconFile = formData.get(`socialIcon_${i}`);
 
-    return NextResponse.json({ success: true, data: section });
+        if (iconFile && iconFile.size > 0) {
+          const buffer = Buffer.from(await iconFile.arrayBuffer());
 
-  } catch (e) {
-    console.log(e);
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+          const uploaded = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              { folder: "social-icons" },
+              (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
+
+          data.socialLinks[i].icon = {
+            url: uploaded.secure_url,
+            public_id: uploaded.public_id,
+          };
+        }
+      }
+    }
+
+    // ✅ SAFE UPDATE (NO VERSION ERROR EVER)
+    const updatedSection = await ContactSection.findOneAndUpdate(
+      {},
+      { $set: data },
+      { new: true, upsert: true }
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: updatedSection,
+    });
+  } catch (error) {
+    console.error("Contact Update Error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }

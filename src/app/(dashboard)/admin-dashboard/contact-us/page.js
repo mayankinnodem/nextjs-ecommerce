@@ -9,56 +9,91 @@ export default function ContactUsAdminPage() {
     phone: "",
     email: "",
     address: "",
+    socialLinks: [],
+    logo: { url: "", public_id: "" },
+    favicon: { url: "", public_id: "" },
   });
 
-  const [logo, setLogo] = useState(null);
-  const [favicon, setFavicon] = useState(null);
-  const [previewLogo, setPreviewLogo] = useState(null);
-  const [previewFavicon, setPreviewFavicon] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [faviconFile, setFaviconFile] = useState(null);
+
+  const [logoPreview, setLogoPreview] = useState("");
+  const [faviconPreview, setFaviconPreview] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   // ✅ Fetch existing data
   useEffect(() => {
     async function loadData() {
-      try {
-        const res = await fetch("/api/admin/contact-us");
-        const data = await res.json();
-        if (data.success && data.data) {
-          setForm(data.data);
-          setPreviewLogo(data.data.logo?.url || null);
-          setPreviewFavicon(data.data.favicon?.url || null);
-        }
-      } catch (err) {
-        console.error("Failed to load contact section:", err);
+      const res = await fetch("/api/admin/contact-us");
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        setForm(data.data);
+
+        // ✅ Existing images preview from DB
+        if (data.data.logo?.url) setLogoPreview(data.data.logo.url);
+        if (data.data.favicon?.url) setFaviconPreview(data.data.favicon.url);
       }
     }
     loadData();
   }, []);
 
-  // ✅ Input handler
+  // ✅ Basic inputs
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ✅ Image change + live preview
+  // ✅ Social Links
+  const addSocialLink = () => {
+    setForm({
+      ...form,
+      socialLinks: [
+        ...form.socialLinks,
+        {
+          platform: "",
+          url: "",
+          icon: { url: "", public_id: "" },
+        },
+      ],
+    });
+  };
+
+  const removeSocialLink = (index) => {
+    const updated = [...form.socialLinks];
+    updated.splice(index, 1);
+    setForm({ ...form, socialLinks: updated });
+  };
+
+  const handleSocialChange = (index, field, value) => {
+    const updated = [...form.socialLinks];
+    updated[index][field] = value;
+    setForm({ ...form, socialLinks: updated });
+  };
+
+  const handleSocialIconChange = (index, file) => {
+    const updated = [...form.socialLinks];
+    updated[index].iconFile = file;
+    updated[index].iconPreview = URL.createObjectURL(file);
+    setForm({ ...form, socialLinks: updated });
+  };
+
+  // ✅ Logo preview
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setLogo(file);
-      setPreviewLogo(URL.createObjectURL(file));
-    }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
   };
 
+  // ✅ Favicon preview
   const handleFaviconChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setFavicon(file);
-      setPreviewFavicon(URL.createObjectURL(file));
-    }
+    setFaviconFile(file);
+    setFaviconPreview(URL.createObjectURL(file));
   };
 
-  // ✅ Submit handler
+  // ✅ Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -68,8 +103,14 @@ export default function ContactUsAdminPage() {
       const formData = new FormData();
       formData.append("data", JSON.stringify(form));
 
-      if (logo) formData.append("logo", logo);
-      if (favicon) formData.append("favicon", favicon);
+      if (logoFile) formData.append("logo", logoFile);
+      if (faviconFile) formData.append("favicon", faviconFile);
+
+      form.socialLinks.forEach((social, index) => {
+        if (social.iconFile) {
+          formData.append(`socialIcon_${index}`, social.iconFile);
+        }
+      });
 
       const res = await fetch("/api/admin/contact-us/update", {
         method: "PUT",
@@ -78,179 +119,136 @@ export default function ContactUsAdminPage() {
 
       const result = await res.json();
 
-      if (result.success) {
-        setMessage("✅ Contact section updated successfully!");
-      } else {
-        setMessage(`❌ Error: ${result.error || "Update failed"}`);
-      }
-    } catch (error) {
-      setMessage("❌ Failed to update. Check console.");
-      console.error(error);
+      setMessage(
+        result.success
+          ? "✅ Updated Successfully"
+          : `❌ ${result.error || "Failed"}`
+      );
+    } catch (err) {
+      setMessage("❌ Update failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-white text-gray-800 rounded-xl shadow-md mt-10">
-      <h1 className="text-2xl font-semibold mb-6 text-gray-900 border-b pb-2">
-        🛠️ Contact Section (Admin)
-      </h1>
+    <div className="max-w-5xl mx-auto p-8 bg-white rounded-xl shadow mt-10">
+      <h1 className="text-2xl font-bold mb-6">🛠 Contact Section Admin</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        {/* LEFT SIDE: Inputs */}
-        <div className="space-y-4">
-          <div>
-            <label className="block mb-1 font-medium">Title</label>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* BASIC INFO */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {["title", "phone", "email", "address"].map((field) => (
             <input
-              name="title"
-              value={form.title}
+              key={field}
+              name={field}
+              value={form[field]}
               onChange={handleChange}
-              placeholder="Title"
-              className="w-full p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder={field}
+              className="p-2 border rounded"
             />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Description</label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="Description"
-              rows={4}
-              className="w-full p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Phone</label>
-            <input
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              placeholder="+91 9999999999"
-              className="w-full p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Email</label>
-            <input
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="info@example.com"
-              className="w-full p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Address</label>
-            <input
-              name="address"
-              value={form.address}
-              onChange={handleChange}
-              placeholder="Sector 63, Noida, India"
-              className="w-full p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
+          ))}
         </div>
 
-        {/* RIGHT SIDE: Images */}
-        <div className="space-y-6">
-          {/* Logo Upload */}
-          <div>
-            <label className="block mb-2 font-medium">Logo</label>
+        <textarea
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+          placeholder="Description"
+          className="w-full p-2 border rounded"
+        />
 
-            {previewLogo && (
-              <div className="mb-3 relative w-32">
-                <img
-                  src={previewLogo}
-                  alt="Logo Preview"
-                  className="w-32 h-32 object-contain border rounded-lg shadow-sm"
-                />
-
-                {/* ❌ Remove Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLogo(null);
-                    setPreviewLogo(null);
-                    setForm((prev) => ({ ...prev, logo: null }));
-                  }}
-                  className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleLogoChange}
-              className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
-               file:rounded file:border-0 file:text-sm file:font-semibold 
-               file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        {/* ✅ LOGO + PREVIEW */}
+        <div>
+          <label className="font-semibold">Logo</label>
+          <input type="file" onChange={handleLogoChange} />
+          {logoPreview && (
+            <img
+              src={logoPreview}
+              className="mt-2 w-24 h-24 object-contain border rounded"
             />
-          </div>
-
-          {/* Favicon Upload */}
-          <div>
-            <label className="block mb-2 font-medium">Favicon</label>
-
-            {previewFavicon && (
-              <div className="mb-3 relative w-16">
-                <img
-                  src={previewFavicon}
-                  alt="Favicon Preview"
-                  className="w-16 h-16 object-contain border rounded-lg shadow-sm"
-                />
-
-                {/* ❌ Remove Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFavicon(null);
-                    setPreviewFavicon(null);
-                    setForm((prev) => ({ ...prev, favicon: null }));
-                  }}
-                  className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFaviconChange}
-              className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
-               file:rounded file:border-0 file:text-sm file:font-semibold 
-               file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-          </div>
+          )}
         </div>
 
-        <div className="col-span-1 md:col-span-2">
+        {/* ✅ FAVICON + PREVIEW */}
+        <div>
+          <label className="font-semibold">Favicon</label>
+          <input type="file" onChange={handleFaviconChange} />
+          {faviconPreview && (
+            <img
+              src={faviconPreview}
+              className="mt-2 w-12 h-12 object-contain border rounded"
+            />
+          )}
+        </div>
+
+        {/* SOCIAL LINKS */}
+        <div>
+          <h2 className="text-lg font-semibold mb-3">🌐 Social Links</h2>
+
+          {form.socialLinks.map((social, index) => (
+            <div key={index} className="grid gap-3 mb-4 border p-3 rounded">
+              <input
+                placeholder="Platform"
+                value={social.platform}
+                onChange={(e) =>
+                  handleSocialChange(index, "platform", e.target.value)
+                }
+                className="p-2 border rounded"
+              />
+
+              <input
+                placeholder="URL"
+                value={social.url}
+                onChange={(e) =>
+                  handleSocialChange(index, "url", e.target.value)
+                }
+                className="p-2 border rounded"
+              />
+
+              <input
+                type="file"
+                onChange={(e) =>
+                  handleSocialIconChange(index, e.target.files[0])
+                }
+              />
+
+              {(social.iconPreview || social.icon?.url) && (
+                <img
+                  src={social.iconPreview || social.icon?.url}
+                  className="w-12 h-12 object-contain"
+                />
+              )}
+
+              <button
+                type="button"
+                onClick={() => removeSocialLink(index)}
+                className="bg-red-500 text-white rounded px-3 py-1"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-all"
+            type="button"
+            onClick={addSocialLink}
+            className="bg-green-600 text-white px-4 py-2 rounded"
           >
-            {loading ? "Updating..." : "💾 Save Changes"}
+            ➕ Add Social Link
           </button>
         </div>
-      </form>
 
-      {message && (
-        <p className="mt-4 text-center text-sm font-medium">{message}</p>
-      )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-3 rounded"
+        >
+          {loading ? "Saving..." : "💾 Save Changes"}
+        </button>
+
+        {message && <p className="text-center">{message}</p>}
+      </form>
     </div>
   );
 }

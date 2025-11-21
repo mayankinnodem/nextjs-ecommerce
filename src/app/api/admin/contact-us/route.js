@@ -1,14 +1,25 @@
-import { connectDB } from "@/lib/dbConnect";
+import { NextResponse } from "next/server";
 import ContactSection from "@/models/ContactSection";
-import { NextResponse } from "next/server"
+import { connectDB } from "@/lib/dbConnect";
 
 export async function GET() {
   try {
     await connectDB();
+
     const data = await ContactSection.findOne();
-    return NextResponse.json({ success: true, data });
-  } catch (e) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+
+    return NextResponse.json({
+      success: true,
+      data: data || null,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message,
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -17,16 +28,29 @@ export async function POST(req) {
     await connectDB();
     const body = await req.json();
 
-    const exists = await ContactSection.findOne();
-    if (exists) return NextResponse.json({
-      success: false,
-      message: "Already exists. Use PUT to update."
-    }, { status: 400 });
+    let existing = await ContactSection.findOne();
 
-    const newData = await ContactSection.create(body);
+    let saved;
 
-    return NextResponse.json({ success: true, data: newData });
-  } catch (e) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    if (existing) {
+      saved = await ContactSection.findByIdAndUpdate(existing._id, body, {
+        new: true,
+      });
+    } else {
+      saved = await ContactSection.create(body);
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: saved,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message,
+      },
+      { status: 500 }
+    );
   }
 }
