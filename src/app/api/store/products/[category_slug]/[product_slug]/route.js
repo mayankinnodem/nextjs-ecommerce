@@ -5,13 +5,21 @@ import Brand from "@/models/Brand";
 import { NextResponse } from "next/server";
 
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
     await connectDB();
 
+    const { params } = context;
+
+    if (!params?.category_slug || !params?.product_slug) {
+      return NextResponse.json(
+        { message: "Params missing" },
+        { status: 400 }
+      );
+    }
+
     const { category_slug, product_slug } = params;
 
-    // ✅ find category by slug
     const category = await Category.findOne({ slug: category_slug });
 
     if (!category) {
@@ -21,7 +29,6 @@ export async function GET(req, { params }) {
       );
     }
 
-    // ✅ product by slug + category
     const product = await Product.findOne({
       slug: product_slug,
       category: category._id,
@@ -38,6 +45,7 @@ export async function GET(req, { params }) {
     }
 
     return NextResponse.json({ success: true, product });
+
   } catch (error) {
     console.error("Product GET API error:", error);
     return NextResponse.json(

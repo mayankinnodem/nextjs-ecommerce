@@ -16,8 +16,8 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Fetch user
     const user = await User.findById(userId);
+
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found" },
@@ -25,68 +25,43 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Prepare shipping address (fallback to user's default)
-    const shippingAddress = {
-      name: address?.name || user.name,
-      phone: address?.phone || user.phone,
-      street: address?.street || user.address,
-      city: address?.city || user.city,
-      state: address?.state || user.state,
-      pincode: address?.pincode || user.pincode,
-    };
-
-    // ✅ Calculate total
+    // Fix 1 — Calculate Correct Total
     const totalAmount = items.reduce(
       (sum, item) => sum + Number(item.price) * Number(item.quantity),
       0
     );
 
-    // ✅ Expected delivery default 5 days
+    // Fix 2 — Expected Delivery
     const expectedDelivery = new Date();
     expectedDelivery.setDate(expectedDelivery.getDate() + 5);
 
-    // ✅ Create order
-const order = await Order.create({
-  userId: user._id,
-  userName: shippingAddress.name,
-  userPhone: shippingAddress.phone,
-  shippingAddress: shippingAddress,
-  items: items.map(i => ({
-    productId: i.productId,
-    name: i.name,
-    price: i.price,
-    quantity: i.quantity,
-    image: i.image,
-  })),
-  totalAmount,
-  status: "Pending",
-  paymentStatus: paymentMode === "Online" ? "Paid" : "Pending",
-  paymentMode: paymentMode || "COD",
-  expectedDelivery,
-});
+    // Fix 3 — Final Address
+    const shippingAddress = {
+      name: address.name,
+      phone: address.phone,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+    };
 
-
-
-    // ✅ Optionally update user default address if different
-    const isAddressChanged =
-      shippingAddress.street !== user.address ||
-      shippingAddress.city !== user.city ||
-      shippingAddress.state !== user.state ||
-      shippingAddress.pincode !== user.pincode;
-
-    if (isAddressChanged) {
-      user.address = shippingAddress.street;
-      user.city = shippingAddress.city;
-      user.state = shippingAddress.state;
-      user.pincode = shippingAddress.pincode;
-      await user.save();
-    }
+    // Fix 4 — Create Order
+    const order = await Order.create({
+      userId,
+      address: shippingAddress,
+      items,
+      totalAmount,
+      paymentMode: paymentMode || "COD",
+      paymentStatus: paymentMode === "Online" ? "Paid" : "Pending",
+      status: "Pending",
+      expectedDelivery,
+    });
 
     return NextResponse.json({ success: true, order });
   } catch (error) {
-    console.error("Order creation error:", error);
+    console.log("Order Error:", error);
     return NextResponse.json(
-      { success: false, message: error.message },
+      { success: false, message: "Server error" },
       { status: 500 }
     );
   }

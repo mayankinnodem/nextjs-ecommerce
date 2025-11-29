@@ -26,20 +26,34 @@ async function uploadToCloudinary(fileBuffer, folder = "products") {
 export async function GET() {
   try {
     await connectDB();
-    const products = await Product.find().sort({ createdAt: -1 });
 
-    const LOW_STOCK_LIMIT = 5; // या env var से लो
-    const lowStock = products.filter((p) => (p.stock ?? 0) < LOW_STOCK_LIMIT).length;
-    const lowStockProducts = products.filter((p) => (p.stock ?? 0) < LOW_STOCK_LIMIT);
+    const products = await Product.find()
+      .populate("category", "name slug")   // ✅ YAHI MAIN FIX HAI
+      .sort({ createdAt: -1 });
+
+    const LOW_STOCK_LIMIT = 5;
+    const lowStockProducts = products.filter(
+      (p) => (p.stock ?? 0) < LOW_STOCK_LIMIT
+    );
 
     return NextResponse.json(
-      { success: true, products, total: products.length, lowStock, lowStockProducts },
+      {
+        success: true,
+        products,
+        total: products.length,
+        lowStock: lowStockProducts.length,
+        lowStockProducts
+      },
       { status: 200 }
     );
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
+
 
 
 // ✅ POST -> Add product (without video)

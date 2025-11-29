@@ -1,6 +1,6 @@
 import ContactSection from "@/components/ContactSection";
 import Sections from "@/components/Sections";
-import ProductsFromApi from "@/components/shop/productsFromApi";
+import Products from "./shop/page";
 import Flags from "@/components/shop/Flags";
 import AboutSection from "@/components/AboutSection";
 import Reviews from "@/components/Reviews";
@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <div>
       <Sections section="landingpage-frontsection"/>
-      <ProductsFromApi/>
+      <Products/>
       <Flags/>
       <AboutSection/>
       <Reviews/>

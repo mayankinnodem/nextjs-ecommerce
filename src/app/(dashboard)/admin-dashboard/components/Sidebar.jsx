@@ -49,7 +49,7 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-white text-gray-900 shadow-md hidden md:block">
-      <div className="p-4 text-xl font-bold border-b">Admin Panel</div>
+      <div className="p-4 text-xl font-bold">Admin Menu</div>
       <nav className="p-4">
         <ul className="space-y-2">
           {navItems.map((item) => (
@@ -84,7 +84,6 @@ export default function Sidebar() {
                       <ChevronRight size={18} />
                     )}
                   </button>
-
                   {openDropdown === item.name && (
                     <ul className="ml-4 mt-1 space-y-1">
                       {item.children.map((child) => (

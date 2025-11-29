@@ -68,7 +68,9 @@ export default function ProductsPage() {
 
   // selection helpers
   const toggleSelect = (id) =>
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
 
   const toggleSelectAll = () => {
     if (selected.length === products.length) setSelected([]);
@@ -123,7 +125,9 @@ export default function ProductsPage() {
       if (data.success) {
         alert(`✅ ${data.updatedCount ?? "Some"} products updated!`);
         // refresh products
-        const refreshed = await fetch("/api/admin/products").then((r) => r.json());
+        const refreshed = await fetch("/api/admin/products").then((r) =>
+          r.json()
+        );
         if (refreshed.success) setProducts(refreshed.products || []);
         setSelected([]);
         // reset bulk flags (optional)
@@ -175,7 +179,12 @@ export default function ProductsPage() {
           <input
             type="checkbox"
             checked={bulkFlags.isTrending ?? false}
-            onChange={(e) => setBulkFlags({ ...bulkFlags, isTrending: e.target.checked ? true : null })}
+            onChange={(e) =>
+              setBulkFlags({
+                ...bulkFlags,
+                isTrending: e.target.checked ? true : null,
+              })
+            }
             className="w-4 h-4"
           />
           <span className="text-sm">Trending</span>
@@ -185,7 +194,12 @@ export default function ProductsPage() {
           <input
             type="checkbox"
             checked={bulkFlags.isFeatured ?? false}
-            onChange={(e) => setBulkFlags({ ...bulkFlags, isFeatured: e.target.checked ? true : null })}
+            onChange={(e) =>
+              setBulkFlags({
+                ...bulkFlags,
+                isFeatured: e.target.checked ? true : null,
+              })
+            }
             className="w-4 h-4"
           />
           <span className="text-sm">Featured</span>
@@ -195,7 +209,12 @@ export default function ProductsPage() {
           <input
             type="checkbox"
             checked={bulkFlags.isNewArrival ?? false}
-            onChange={(e) => setBulkFlags({ ...bulkFlags, isNewArrival: e.target.checked ? true : null })}
+            onChange={(e) =>
+              setBulkFlags({
+                ...bulkFlags,
+                isNewArrival: e.target.checked ? true : null,
+              })
+            }
             className="w-4 h-4"
           />
           <span className="text-sm">New Arrival</span>
@@ -206,7 +225,9 @@ export default function ProductsPage() {
           type="number"
           placeholder="Discount (%)"
           value={bulkFlags.discount}
-          onChange={(e) => setBulkFlags({ ...bulkFlags, discount: e.target.value })}
+          onChange={(e) =>
+            setBulkFlags({ ...bulkFlags, discount: e.target.value })
+          }
           className="border px-2 py-1 rounded w-36"
         />
 
@@ -215,7 +236,9 @@ export default function ProductsPage() {
           type="number"
           placeholder="Price"
           value={bulkFlags.price}
-          onChange={(e) => setBulkFlags({ ...bulkFlags, price: e.target.value })}
+          onChange={(e) =>
+            setBulkFlags({ ...bulkFlags, price: e.target.value })
+          }
           className="border px-2 py-1 rounded w-36"
         />
 
@@ -224,40 +247,43 @@ export default function ProductsPage() {
           type="number"
           placeholder="Stock"
           value={bulkFlags.stock}
-          onChange={(e) => setBulkFlags({ ...bulkFlags, stock: e.target.value })}
+          onChange={(e) =>
+            setBulkFlags({ ...bulkFlags, stock: e.target.value })
+          }
           className="border px-2 py-1 rounded w-36"
         />
 
         {/* Brand dropdown */}
         <select
-  value={bulkFlags.categories}
-  onChange={(e) => setBulkFlags({ ...bulkFlags, categories: e.target.value })}
-  className="border px-2 py-1 rounded"
->
-  <option value="">Select Category (optional)</option>
-  {categories.map((c) => (
-    <option key={c._id} value={c._id}>
-      {c.name}
-    </option>
-  ))}
-</select>
+          value={bulkFlags.categories}
+          onChange={(e) =>
+            setBulkFlags({ ...bulkFlags, categories: e.target.value })
+          }
+          className="border px-2 py-1 rounded"
+        >
+          <option value="">Select Category (optional)</option>
+          {categories.map((c) => (
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
 
         <select
-  value={bulkFlags.categories}
-  onChange={(e) =>
-    setBulkFlags({ ...bulkFlags, categories: e.target.value })
-  }
-  className="border px-2 py-1 rounded"
->
-  <option value="">Select Category (optional)</option>
-  {categories.map((c) => (
-    <option key={c._id || c.id || c.name} value={c.name}>
-      {c.name}
-    </option>
-  ))}
-</select>
+          value={bulkFlags.categories}
+          onChange={(e) =>
+            setBulkFlags({ ...bulkFlags, categories: e.target.value })
+          }
+          className="border px-2 py-1 rounded"
+        >
+          <option value="">Select Category (optional)</option>
+          {categories.map((c) => (
+            <option key={c._id || c.id || c.name} value={c.name}>
+              {c.name}
+            </option>
+          ))}
+        </select>
 
-        
         <button
           onClick={handleBulkUpdate}
           className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -277,7 +303,9 @@ export default function ProductsPage() {
                 <th className="px-4 py-3">
                   <input
                     type="checkbox"
-                    checked={selected.length === products.length && products.length > 0}
+                    checked={
+                      selected.length === products.length && products.length > 0
+                    }
                     onChange={toggleSelectAll}
                     className="w-4 h-4"
                   />
@@ -319,40 +347,70 @@ export default function ProductsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 align-top">{p.name}</td>
-                  <td className="px-4 py-3 align-top">₹{p.salePrice ?? p.price}</td>
-                  <td className="px-4 py-3 align-top">{p.discount ? p.discount + "%" : "-"}</td>
-                 <td className="px-4 py-3 align-top">
-  {brands.find((b) => b._id === p.brand)?.name || "-"}
-</td>
-<td className="px-4 py-3 align-top">
-  {Array.isArray(p.categories)
-    ? p.categories
-        .map((id) => categories.find((c) => c._id === id)?.name || "")
-        .filter(Boolean)
-        .join(", ")
-    : categories.find((c) => c._id === p.category)?.name || "-"}
-</td>
+                  <td className="px-4 py-3 align-top">
+                    ₹{p.salePrice ?? p.price}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {p.discount ? p.discount + "%" : "-"}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {brands.find((b) => b._id === p.brand)?.name || "-"}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {Array.isArray(p.categories)
+                      ? p.categories
+                          .map(
+                            (id) =>
+                              categories.find((c) => c._id === id)?.name || ""
+                          )
+                          .filter(Boolean)
+                          .join(", ")
+                      : categories.find((c) => c._id === p.category)?.name ||
+                        "-"}
+                  </td>
                   <td className="px-4 py-3 align-top">{p.stock ?? "-"}</td>
 
                   <td className="px-4 py-3 align-top">
-                    {p.isTrending && <span className="px-2 py-1 bg-purple-200 rounded mr-1 text-xs">Trending</span>}
-                    {p.isFeatured && <span className="px-2 py-1 bg-yellow-200 rounded mr-1 text-xs">Featured</span>}
-                    {p.isNewArrival && <span className="px-2 py-1 bg-green-200 rounded text-xs">New</span>}
+                    {p.isTrending && (
+                      <span className="px-2 py-1 bg-purple-200 rounded mr-1 text-xs">
+                        Trending
+                      </span>
+                    )}
+                    {p.isFeatured && (
+                      <span className="px-2 py-1 bg-yellow-200 rounded mr-1 text-xs">
+                        Featured
+                      </span>
+                    )}
+                    {p.isNewArrival && (
+                      <span className="px-2 py-1 bg-green-200 rounded text-xs">
+                        New
+                      </span>
+                    )}
                   </td>
 
                   <td className="px-4 py-3 align-top">
-                    <Link href={`/admin-dashboard/products/edit/${p._id}`} className="text-blue-600 hover:underline mr-3">
+                    <Link
+                      href={`/admin-dashboard/products/edit/${p._id}`}
+                      className="text-blue-600 hover:underline mr-3"
+                    >
                       Edit
                     </Link>
                     <button
                       onClick={async () => {
                         if (!confirm("Delete this product?")) return;
                         try {
-                          const res = await fetch(`/api/admin/products/delete/${p._id}`, { method: "DELETE" });
+                          const res = await fetch(
+                            `/api/admin/products/delete/${p._id}`,
+                            { method: "DELETE" }
+                          );
                           const d = await res.json();
                           if (d.success) {
-                            setProducts((prev) => prev.filter((x) => x._id !== p._id));
-                            setSelected((prev) => prev.filter((x) => x !== p._id));
+                            setProducts((prev) =>
+                              prev.filter((x) => x._id !== p._id)
+                            );
+                            setSelected((prev) =>
+                              prev.filter((x) => x !== p._id)
+                            );
                           } else {
                             alert("Delete failed: " + (d.error || "unknown"));
                           }

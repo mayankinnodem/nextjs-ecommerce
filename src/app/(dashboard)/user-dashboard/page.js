@@ -12,9 +12,10 @@ export default function DashboardHome() {
   const email = "johndoe@example.com"; // Replace with session?.user?.email
 
   // Navigation handler
-  const handleNavigate = (path) => {
-   <Link href={`/user-dashboard/${user}`}>Dashboard</Link>
-  };
+const handleNavigate = (path) => {
+  router.push(`/user-dashboard/${path}`);
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 flex flex-col items-center py-12 px-4">

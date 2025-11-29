@@ -1,25 +1,37 @@
 const mongoose = require("mongoose");
 
-const orderSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // ✅ store user
-  items: [
-    {
-      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true }, // ✅ store product
+const orderSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
+    items: [
+      {
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+        name: String,
+        price: Number,
+        quantity: Number
+      },
+    ],
+
+    address: {
       name: String,
-      price: Number,
-      quantity: Number,
-      image: String,
+      phone: String,
+      street: String,
+      city: String,
+      state: String,
+      pincode: String,
     },
-  ],
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    pincode: String,
+
+    totalAmount: Number,   // ✔ backend se match
+
+    paymentMode: { type: String, default: "COD" },
+    paymentStatus: { type: String, default: "Pending" },
+
+    status: { type: String, default: "Pending" },
+
+    expectedDelivery: Date,
   },
-  total: Number,
-  status: { type: String, default: "Pending" },
-  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // optional
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 module.exports = mongoose.models.Order || mongoose.model("Order", orderSchema);

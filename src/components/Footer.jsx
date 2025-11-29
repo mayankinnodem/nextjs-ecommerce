@@ -24,10 +24,9 @@ export default function Footer() {
         setLoading(false);
       }
     };
-
     fetchContact();
   }, []);
-
+  
   if (loading) {
     return (
       <footer className="bg-gray-900 text-center py-10 text-gray-400">
@@ -90,50 +89,70 @@ export default function Footer() {
         </div>
 
         {/* ✅ Contact + Dynamic Social Links */}
-        <div>
-          <h3 className="text-lg font-semibold text-white mb-4">Get in Touch</h3>
+<div>
+  <h3 className="text-lg font-semibold text-white mb-4">Get in Touch</h3>
 
-          <div className="space-y-3 text-sm">
-            {contact.address && (
-              <p className="flex items-start gap-2">
-                <MapPin size={16} /> {contact.address}
-              </p>
-            )}
-            {contact.phone && (
-              <p className="flex items-center gap-2">
-                <Phone size={16} /> {contact.phone}
-              </p>
-            )}
-            {contact.email && (
-              <p className="flex items-center gap-2">
-                <Mail size={16} /> {contact.email}
-              </p>
-            )}
-          </div>
+  <div className="space-y-3 text-sm">
 
-          {/* ✅ SOCIAL LINKS FROM ADMIN PANEL */}
-          <div className="flex gap-4 mt-6 flex-wrap">
-            {contact.socialLinks?.map((social, index) => (
-              <a
-                key={index}
-                href={social.url}
-                target="_blank"
-                className="hover:scale-110 transition"
-                title={social.platform}
-              >
-                {social.icon?.url ? (
-                  <img
-                    src={social.icon.url}
-                    alt={social.platform}
-                    className="w-8 h-8 object-contain"
-                  />
-                ) : (
-                  <span className="text-sm">{social.platform}</span>
-                )}
-              </a>
-            ))}
-          </div>
-        </div>
+    {/* Address - Click to open Google Maps */}
+    {contact.address && (
+      <a
+        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-start gap-2 hover:text-white transition"
+      >
+        <MapPin size={16} /> {contact.address}
+      </a>
+    )}
+
+    {/* Phone - Click to Call */}
+    {contact.phone && (
+      <a
+        href={`tel:${contact.phone}`}
+        className="flex items-center gap-2 hover:text-white transition"
+      >
+        <Phone size={16} /> {contact.phone}
+      </a>
+    )}
+
+    {/* Email - Click to Email */}
+    {contact.email && (
+      <a
+        href={`mailto:${contact.email}`}
+        className="flex items-center gap-2 hover:text-white transition"
+      >
+        <Mail size={16} /> {contact.email}
+      </a>
+    )}
+
+  </div>
+
+  {/* ✅ SOCIAL LINKS FROM ADMIN PANEL */}
+  <div className="flex gap-4 mt-6 flex-wrap">
+    {contact.socialLinks?.map((social, index) => (
+      <a
+        key={index}
+        href={social.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hover:scale-110 transition"
+        title={social.platform}
+      >
+        {social.icon?.url ? (
+          <img
+            src={social.icon.url}
+            alt={social.platform}
+            className="w-8 h-8 object-contain"
+          />
+        ) : (
+          <span className="text-sm">{social.platform}</span>
+        )}
+      </a>
+    ))}
+  </div>
+</div>
+
       </div>
 
       {/* Bottom bar */}

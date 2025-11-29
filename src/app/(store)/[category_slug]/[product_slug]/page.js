@@ -1,5 +1,6 @@
 import React from "react";
 
+// ✅ FUNCTION MUST BE ABOVE COMPONENT
 async function getProduct(category_slug, product_slug) {
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ||
@@ -14,9 +15,10 @@ async function getProduct(category_slug, product_slug) {
   return res.json();
 }
 
-
 export default async function ProductPage({ params }) {
-  const { category_slug, product_slug } = params;
+
+  const resolvedParams = await params; // ✅ Next 15 FIX
+  const { category_slug, product_slug } = resolvedParams;
 
   const data = await getProduct(category_slug, product_slug);
 
@@ -36,7 +38,6 @@ export default async function ProductPage({ params }) {
     <div className="container mx-auto py-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-        {/* ✅ Product Images */}
         <div>
           {product?.images?.length > 0 ? (
             <img
@@ -49,7 +50,6 @@ export default async function ProductPage({ params }) {
           )}
         </div>
 
-        {/* ✅ Product Info */}
         <div>
           <h1 className="text-3xl font-bold">{product.name}</h1>
           <p className="text-gray-500 mt-3">{product.description}</p>
@@ -72,7 +72,6 @@ export default async function ProductPage({ params }) {
             <p className="text-sm">Stock: {product?.stock}</p>
           </div>
 
-          {/* ✅ Attributes */}
           {product?.attributes?.length > 0 && (
             <div className="mt-5">
               <h3 className="font-semibold">Attributes</h3>

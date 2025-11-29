@@ -73,7 +73,7 @@ export default function CartPage() {
               >
                 <div className="flex items-center gap-4 w-full sm:w-2/3">
                   <img
-                    src={item.images?.[0]?.url || "/placeholder.png"}
+                    src={item.image || "/placeholder.png"}
                     alt={item.name}
                     className="w-20 h-20 object-cover rounded-lg"
                   />

@@ -61,26 +61,31 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (data.success && data.user) {
-        // Only essential fields to avoid quota error
-        const userObj = {
-          _id: data.user._id,
-          phone: data.user.phone,
-          name: data.user.name || "",
-          profilePic: data.user.profilePic?.url || "",
-          // email: data.user.email || "",
-        };
+  // Store extended user info for checkout convenience
+  const userObj = {
+    _id: data.user._id,
+    phone: data.user.phone,
+    name: data.user.name || "",
+    profilePic: data.user.profilePic?.url || "",
+    email: data.user.email || "",
+    address: data.user.address || "", // primary address
+    city: data.user.city || "",
+    state: data.user.state || "",
+    pincode: data.user.pincode || "",
+    country: data.user.country || "India", // default to India
+  };
 
-        localStorage.setItem("user", JSON.stringify(userObj));
-        // localStorage.setItem("userLoggedIn", "true");
+  localStorage.setItem("user", JSON.stringify(userObj));
 
-        setMessage("Login successful!");
-        setMessageType("success");
+  setMessage("Login successful!");
+  setMessageType("success");
 
-        setTimeout(() => window.location.href = "/", 800);
-      } else {
-        setMessage(data.message || "Invalid OTP. Try again.");
-        setMessageType("error");
-      }
+  setTimeout(() => window.location.href = "/", 800);
+} else {
+  setMessage(data.message || "Invalid OTP. Try again.");
+  setMessageType("error");
+}
+
     } catch (err) {
       console.error(err);
       setMessage("Something went wrong. Try again.");

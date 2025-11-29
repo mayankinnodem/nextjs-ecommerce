@@ -2,19 +2,22 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
+import countriesData from "@/lib/countries.json";
 import {
   FaEdit,
   FaUserCircle,
   FaSave,
   FaPhoneAlt,
-  FaVenusMars,
   FaBriefcase,
   FaMapMarkerAlt,
   FaEnvelope,
-  FaGlobeAsia,
 } from "react-icons/fa";
 
 export default function ProfilePage() {
+  const [countries] = useState(countriesData);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+
   const [editMode, setEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(false);
@@ -40,7 +43,23 @@ export default function ProfilePage() {
     profilePic: "",
   });
 
-  // ✅ Load profile on mount
+  // Load states when country changes
+  useEffect(() => {
+    if (profile.country) {
+      const selectedCountry = countries.find((c) => c.name === profile.country);
+      setStates(selectedCountry?.states || []);
+    }
+  }, [profile.country]);
+
+  // Load cities when state changes
+  useEffect(() => {
+    if (profile.state) {
+      const selectedState = states.find((s) => s.name === profile.state);
+      setCities(selectedState?.cities || []);
+    }
+  }, [profile.state, states]);
+
+  // Load profile on mount
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) return showError("No logged-in user found. Please login again.");
@@ -51,7 +70,7 @@ export default function ProfilePage() {
     fetchProfile(userData._id);
   }, []);
 
-  // ✅ Fetch profile from backend
+  // Fetch profile
   const fetchProfile = async (userId) => {
     try {
       setLoading(true);
@@ -67,13 +86,13 @@ export default function ProfilePage() {
     }
   };
 
-  // ✅ Handle input change
+  // Input handler
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handle image upload
+  // File handler
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -81,59 +100,61 @@ export default function ProfilePage() {
     if (file.size > 3 * 1024 * 1024)
       return showError("File size exceeds 3MB. Please choose a smaller image.");
 
-    const reader = new FileReader();
-    reader.onload = (event) =>
-      setProfile((prev) => ({ ...prev, profilePic: event.target.result }));
-    reader.readAsDataURL(file);
+    setProfile((prev) => ({
+      ...prev,
+      profilePic: file,
+    }));
   };
 
-  // ✅ Save changes
+  // Save profile
 const handleSave = async () => {
   setLoading(true);
 
-  const form = new FormData();
+  try {
+    const formData = new FormData();
 
-  form.append("_id", profile._id);
-  form.append("name", profile.name);
-  form.append("email", profile.email);
-  form.append("phone", profile.phone);
+    for (const key in profile) {
+      if (profile[key]) formData.append(key, profile[key]);
+    }
 
-  if (fileInputRef.current?.files[0]) {
-    form.append("profilePic", fileInputRef.current.files[0]);
-  }
+    const res = await fetch("/api/user/update-profile", {
+      method: "POST",
+      body: formData,
+    });
 
-  const res = await fetch("/api/user/update-profile", {
-    method: "POST",
-    body: form,
-  });
+    const data = await res.json();
 
-  const data = await res.json();
+    if (data.success) {
+      const updatedUser = {
+        _id: data.user._id,
+        name: data.user.name || "",
+        phone: data.user.phone || "",
+        profilePic: data.user.profilePic?.url || "",
+        email: data.user.email || "",
+        address: data.user.address || "",
+        city: data.user.city || "",
+        state: data.user.state || "",
+        pincode: data.user.pincode || "",
+        country: data.user.country || "India",
+        occupation: data.user.occupation || "",
+        company: data.user.company || "",
+      };
 
-  if (data.success) {
-    // Save updated user to localStorage
-    // 
-    const updatedUser = {
-      _id: data.user._id,
-      phone: data.user.phone,
-      name: data.user.name,
-      profilePic: data.user.profilePic || "",
-    };
-
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-
-    setProfile(data.user);
-    setEditMode(false);
-    showSuccess("Profile updated successfully!");
-  } else {
-    showError(data.message || "Update failed!");
+      setProfile(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser)); // <-- update localStorage
+      setEditMode(false);
+      showSuccess("Profile updated successfully");
+    } else {
+      showError(data.message);
+    }
+  } catch {
+    showError("Server error");
   }
 
   setLoading(false);
 };
 
 
-
-  // ✅ Helpers
   const showError = (msg) => {
     setMessage(msg);
     setMessageType("error");
@@ -142,6 +163,12 @@ const handleSave = async () => {
   const showSuccess = (msg) => {
     setMessage(msg);
     setMessageType("success");
+  };
+
+  // NEXT BUTTON HANDLER
+  const handleNext = () => {
+    if (activeTab === "profile") setActiveTab("address");
+    else if (activeTab === "address") setActiveTab("professional");
   };
 
   return (
@@ -158,7 +185,14 @@ const handleSave = async () => {
             onClick={() => editMode && fileInputRef.current.click()}
           >
             {profile.profilePic ? (
-              <img src={profile.profilePic} className="object-cover w-full h-full" />
+              <img
+                src={
+                  typeof profile.profilePic === "string"
+                    ? profile.profilePic
+                    : URL.createObjectURL(profile.profilePic)
+                }
+                className="object-cover w-full h-full"
+              />
             ) : (
               <FaUserCircle className="text-purple-400 w-full h-full" />
             )}
@@ -216,34 +250,56 @@ const handleSave = async () => {
             <ProfileTab profile={profile} handleChange={handleChange} editMode={editMode} />
           )}
           {activeTab === "address" && (
-            <AddressTab profile={profile} handleChange={handleChange} editMode={editMode} />
+            <AddressTab
+              profile={profile}
+              handleChange={handleChange}
+              editMode={editMode}
+              countries={countries}
+              states={states}
+              cities={cities}
+            />
           )}
           {activeTab === "professional" && (
-            <ProfessionalTab profile={profile} handleChange={handleChange} editMode={editMode} />
+            <ProfessionalTab
+              profile={profile}
+              handleChange={handleChange}
+              editMode={editMode}
+            />
           )}
         </div>
 
-        {/* Save Button */}
+        {/* Bottom Buttons */}
         {editMode && (
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-3 mt-6 rounded-xl font-semibold transition disabled:opacity-70"
-          >
-            {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Saving...
-              </>
+          <div className="mt-6">
+            {activeTab !== "professional" ? (
+              <button
+                onClick={handleNext}
+                className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-xl font-semibold"
+              >
+                Next →
+              </button>
             ) : (
-              <>
-                <FaSave /> Save Changes
-              </>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-semibold transition disabled:opacity-70"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FaSave /> Save Changes
+                  </>
+                )}
+              </button>
             )}
-          </button>
+          </div>
         )}
 
-        {/* Status Message */}
+        {/* Alert */}
         {message && (
           <p
             className={`mt-4 text-center ${
@@ -258,45 +314,7 @@ const handleSave = async () => {
   );
 }
 
-/* ───────────── Helper Components ───────────── */
-
-function ProfileTab({ profile, handleChange, editMode }) {
-  return (
-    <>
-      <Input label="Full Name" name="name" value={profile.name} onChange={handleChange} disabled={!editMode} />
-      <Input label="Email" name="email" value={profile.email} icon={<FaEnvelope />} onChange={handleChange} disabled={!editMode} />
-      <Input label="Phone" name="phone" value={profile.phone} icon={<FaPhoneAlt />} onChange={handleChange} disabled={!editMode} />
-      <Input label="Gender" name="gender" value={profile.gender} icon={<FaVenusMars />} onChange={handleChange} disabled={!editMode} />
-      <Input label="Date of Birth" name="dob" type="date" value={profile.dob} onChange={handleChange} disabled={!editMode} />
-      <Input label="Marital Status" name="maritalStatus" value={profile.maritalStatus} onChange={handleChange} disabled={!editMode} />
-    </>
-  );
-}
-
-function AddressTab({ profile, handleChange, editMode }) {
-  return (
-    <>
-      <Input label="Address" name="address" value={profile.address} icon={<FaMapMarkerAlt />} onChange={handleChange} disabled={!editMode} />
-      <div className="grid grid-cols-2 gap-4">
-        <Input label="City" name="city" value={profile.city} onChange={handleChange} disabled={!editMode} />
-        <Input label="State" name="state" value={profile.state} onChange={handleChange} disabled={!editMode} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <Input label="Pincode" name="pincode" value={profile.pincode} onChange={handleChange} disabled={!editMode} />
-        <Input label="Country" name="country" value={profile.country} icon={<FaGlobeAsia />} onChange={handleChange} disabled={!editMode} />
-      </div>
-    </>
-  );
-}
-
-function ProfessionalTab({ profile, handleChange, editMode }) {
-  return (
-    <>
-      <Input label="Occupation" name="occupation" value={profile.occupation} icon={<FaBriefcase />} onChange={handleChange} disabled={!editMode} />
-      <Input label="Company" name="company" value={profile.company} onChange={handleChange} disabled={!editMode} />
-    </>
-  );
-}
+/* ───────────── Input Component ───────────── */
 
 function Input({ label, icon, disabled, ...props }) {
   return (
@@ -308,8 +326,112 @@ function Input({ label, icon, disabled, ...props }) {
         }`}
       >
         {icon && <span className="text-gray-400 mr-2">{icon}</span>}
-        <input {...props} disabled={disabled} className="w-full outline-none bg-transparent" placeholder={label} />
+        <input {...props} disabled={disabled} className="w-full outline-none bg-transparent" />
       </div>
     </div>
+  );
+}
+
+/* ───────────── Select Component ───────────── */
+
+function Select({ label, options = [], disabled, ...props }) {
+  return (
+    <div>
+      <label className="block text-gray-700 font-semibold mb-1">{label}</label>
+      <select
+        {...props}
+        disabled={disabled}
+        className={`w-full px-3 py-2 border rounded-xl ${
+          disabled ? "bg-gray-100" : "focus:ring-2 focus:ring-purple-400"
+        }`}
+      >
+        <option value="">Select {label}</option>
+        {options.map((opt, i) => (
+          <option key={i} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/* ───────────── Tabs ───────────── */
+
+function ProfileTab({ profile, handleChange, editMode }) {
+  return (
+    <>
+      <Input label="Full Name" name="name" value={profile.name} onChange={handleChange} disabled={!editMode} />
+
+      <Input label="Email" name="email" value={profile.email} icon={<FaEnvelope />} onChange={handleChange} disabled={!editMode} />
+
+      <Input label="Phone" name="phone" value={profile.phone} icon={<FaPhoneAlt />} onChange={handleChange} disabled={!editMode} />
+
+      <Select
+        label="Gender"
+        name="gender"
+        value={profile.gender}
+        disabled={!editMode}
+        options={["Male", "Female", "Other"]}
+        onChange={handleChange}
+      />
+
+      <Input label="Date of Birth" type="date" name="dob" value={profile.dob} onChange={handleChange} disabled={!editMode} />
+<Select
+        label="maritalStatus"
+        name="maritalStatus"
+        value={profile.maritalStatus || ""}
+        disabled={!editMode}
+        options={[, "Single", "Married"]}
+        onChange={handleChange}
+      />
+
+    </>
+  );
+}
+
+function AddressTab({ profile, handleChange, editMode, countries, states, cities }) {
+  return (
+    <>
+      <Input label="Address" name="address" value={profile.address} icon={<FaMapMarkerAlt />} onChange={handleChange} disabled={!editMode} />
+
+      <Select
+        label="Country"
+        name="country"
+        value={profile.country}
+        disabled={!editMode}
+        options={countries.map((c) => c.name)}
+        onChange={handleChange}
+      />
+
+      <Select
+        label="State"
+        name="state"
+        value={profile.state}
+        disabled={!editMode || !profile.country}
+        options={states.map((s) => s.name)}
+        onChange={handleChange}
+      />
+
+      <Select
+        label="City"
+        name="city"
+        value={profile.city}
+        disabled={!editMode || !profile.state}
+        options={cities.map((c) => c.name)}
+        onChange={handleChange}
+      />
+
+      <Input label="Pincode" name="pincode" value={profile.pincode} onChange={handleChange} disabled={!editMode} />
+    </>
+  );
+}
+
+function ProfessionalTab({ profile, handleChange, editMode }) {
+  return (
+    <>
+      <Input label="Occupation" name="occupation" value={profile.occupation} icon={<FaBriefcase />} onChange={handleChange} disabled={!editMode} />
+      <Input label="Company" name="company" value={profile.company} onChange={handleChange} disabled={!editMode} />
+    </>
   );
 }

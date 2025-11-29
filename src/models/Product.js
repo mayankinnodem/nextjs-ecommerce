@@ -14,7 +14,7 @@ const ProductSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
-
+    
     // ✅ ⛔ DO NOT CHANGE — subCategory remains STRING
     subCategory: { type: String }, // ✅ you asked to keep it same
 
