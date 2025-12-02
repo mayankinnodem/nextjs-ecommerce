@@ -39,6 +39,7 @@ export async function POST(req) {
     const shippingAddress = {
       name: address.name,
       phone: address.phone,
+      alternatePhone: address.phone,
       street: address.street,
       city: address.city,
       state: address.state,

@@ -302,8 +302,7 @@ export default function CheckoutPage() {
     {typeof c === "string" ? c : c.name}
   </option>
 ))}
-
-              </select>
+  </select>
 
               <input
                 placeholder="Pincode (6 digits)"
