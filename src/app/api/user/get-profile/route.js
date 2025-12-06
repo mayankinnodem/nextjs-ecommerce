@@ -4,7 +4,7 @@ import User from "@/models/User";
 
 export async function GET(req) {
   try {
-    await connectDB();
+    await connectDB();  // FIXED
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
@@ -24,13 +24,16 @@ export async function GET(req) {
         { status: 404 }
       );
     }
+ 
+    // Clean profilePic
+    const pp = user.profilePic?.url ? user.profilePic.url.trim() : "";
 
     return NextResponse.json(
       {
         success: true,
         user: {
           ...user._doc,
-          profilePic: user.profilePic?.url || "",  // <-- ALWAYS send URL only
+          profilePic: pp,  // ALWAYS return a string URL
         },
       },
       { status: 200 }
