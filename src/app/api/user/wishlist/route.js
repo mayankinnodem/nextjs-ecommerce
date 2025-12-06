@@ -1,69 +1,98 @@
-// /src/app/api/user/wishlist/route.js
-
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/dbConnect";
-import User from "@/models/User";
+import Wishlist from "@/models/Wishlist";
+import Product from "@/models/Product"; // needed for populate
 
-// ✅ Add / Remove product in wishlist
-export async function POST(req) {
-  try {
-    await connectDB();
-
-    const { phone, product } = await req.json();
-    if (!phone || !product?._id) {
-      return NextResponse.json({ success: false, message: "Invalid data" }, { status: 400 });
-    }
-
-    const user = await User.findOne({ phone });
-    if (!user) {
-      return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
-    }
-
-    // ✅ Ensure wishlist is always an array
-    if (!Array.isArray(user.wishlist)) user.wishlist = [];
-
-    // ✅ Check if product already exists
-    const exists = user.wishlist.some((item) => item._id.toString() === product._id.toString());
-
-    if (exists) {
-      // Remove if already exists
-      user.wishlist = user.wishlist.filter((item) => item._id.toString() !== product._id.toString());
-    } else {
-      // Add new product
-      user.wishlist.push(product);
-    }
-
-    await user.save();
-    return NextResponse.json({ success: true, wishlist: user.wishlist });
-  } catch (error) {
-    console.error("❌ Wishlist Error:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
-  }
-}
-
-// ✅ Get user wishlist
+// ✅ Get wishlist products (full product objects)
 export async function GET(req) {
   try {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const phone = searchParams.get("phone");
+    const userId = searchParams.get("userId");
 
-    if (!phone) {
-      return NextResponse.json({ success: false, message: "Phone missing" }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "userId missing" },
+        { status: 400 }
+      );
     }
 
-    const user = await User.findOne({ phone });
-    if (!user) {
-      return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
-    }
+    const items = await Wishlist.find({ userId })
+      .populate({
+        path: "productId",
+        model: Product, // or "Product"
+      })
+      .lean();
 
-    // ✅ Ensure wishlist is array
-    const wishlist = Array.isArray(user.wishlist) ? user.wishlist : [];
+    // सिर्फ products की list भेज रहे हैं
+    const products = items
+      .map((it) => it.productId)
+      .filter(Boolean); // अगर कभी कोई broken ref हो तो
 
-    return NextResponse.json({ success: true, wishlist });
+    return NextResponse.json({ success: true, wishlist: products });
   } catch (error) {
     console.error("❌ Wishlist GET Error:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// ✅ Add to wishlist
+export async function POST(req) {
+  try {
+    await connectDB();
+
+    const { userId, productId } = await req.json();
+
+    if (!userId || !productId) {
+      return NextResponse.json(
+        { success: false, message: "Invalid data" },
+        { status: 400 }
+      );
+    }
+
+    // upsert-style: अगर already है तो कुछ मत करो
+    await Wishlist.updateOne(
+      { userId, productId },
+      { userId, productId },
+      { upsert: true }
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("❌ Wishlist POST Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// ✅ Remove from wishlist
+export async function DELETE(req) {
+  try {
+    await connectDB();
+
+    const { userId, productId } = await req.json();
+
+    if (!userId || !productId) {
+      return NextResponse.json(
+        { success: false, message: "Invalid data" },
+        { status: 400 }
+      );
+    }
+
+    await Wishlist.deleteOne({ userId, productId });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("❌ Wishlist DELETE Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    );
   }
 }

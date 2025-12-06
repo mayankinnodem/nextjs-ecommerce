@@ -1,99 +1,122 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Heart } from "lucide-react";
 
 export default function WishlistPage() {
-  const router = useRouter();
   const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Load wishlist on mount
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("wishlist")) || [];
-    setWishlist(stored);
+    const localUser = JSON.parse(localStorage.getItem("user"));
+    if (!localUser?._id) {
+      setLoading(false);
+      return;
+    }
+
+    fetch(`/api/user/wishlist?userId=${localUser._id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const products = data?.wishlist || [];
+        setWishlist(products);
+
+        const ids = products.map((p) => p._id);
+        localStorage.setItem("wishlistIds", JSON.stringify(ids));
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  // ✅ Keep localStorage synced
-  useEffect(() => {
-    localStorage.setItem("wishlist", JSON.stringify(wishlist));
-  }, [wishlist]);
+  const handleRemove = async (productId) => {
+    const localUser = JSON.parse(localStorage.getItem("user"));
 
-  // ✅ Move item to cart
-  const handleMoveToCart = (id) => {
-    const itemToMove = wishlist.find((item) => item._id === id);
-    if (!itemToMove) return;
+    await fetch(`/api/user/wishlist`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: localUser._id, productId }),
+    });
 
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const existing = cart.find((item) => item._id === id);
+    setWishlist((prev) => prev.filter((item) => item._id !== productId));
+
+    const ids =
+      JSON.parse(localStorage.getItem("wishlistIds")).filter((id) => id !== productId);
+    localStorage.setItem("wishlistIds", JSON.stringify(ids));
+  };
+
+  const handleMoveToCart = (product) => {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const existing = cart.find((item) => item._id === product._id);
 
     if (existing) existing.quantity += 1;
-    else cart.push({ ...itemToMove, quantity: 1 });
+    else cart.push({ ...product, quantity: 1 });
 
     localStorage.setItem("cart", JSON.stringify(cart));
-
-    // Remove from wishlist
-    const updated = wishlist.filter((item) => item._id !== id);
-    setWishlist(updated);
+    handleRemove(product._id);
+    alert("Moved to cart 🛒");
   };
 
-  // ✅ Remove item from wishlist
-  const handleRemove = (id) => {
-    const updated = wishlist.filter((item) => item._id !== id);
-    setWishlist(updated);
-  };
-
-  // ✅ Go to product page
-  const handleViewProduct = (id) => {
-    router.push(`/product/${id}`);
-  };
+  if (loading) return <p className="text-center p-6 text-lg">Loading...</p>;
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">My Wishlist ❤️</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800 flex items-center gap-3">
+        My Wishlist ❤️
+        <span className="text-sm bg-red-100 text-red-600 px-3 py-1 rounded-full">
+          {wishlist.length} items
+        </span>
+      </h1>
 
       {wishlist.length === 0 ? (
-        <p className="text-gray-600 text-center text-lg">
-          Your wishlist is empty.
-        </p>
+        <p className="text-gray-600 text-center text-lg">Your wishlist is empty.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {wishlist.map((item) => (
-            <div
-              key={item._id}
-              className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4 flex flex-col items-center"
-            >
-              <img
-                src={item.images?.[0]?.url || "/placeholder.png"}
-                alt={item.name}
-                className="w-40 h-40 object-cover rounded-xl mb-3 cursor-pointer"
-                onClick={() => handleViewProduct(item._id)}
-              />
-              <h3
-                className="font-semibold text-lg text-gray-800 hover:text-blue-600 cursor-pointer"
-                onClick={() => handleViewProduct(item._id)}
-              >
-                {item.name}
-              </h3>
-              <p className="text-gray-600">
-                ₹{Number(item.price).toLocaleString()}
-              </p>
+          {wishlist.map((item) => {
+            const categorySlug = item?.categorySlug || item?.category?.slug || "unknown";
+            const productSlug = item?.slug || "product";
+            const image = item?.images?.[0]?.url || "/placeholder.png";
 
-              <div className="mt-4 flex gap-3">
-                <button
-                  onClick={() => handleMoveToCart(item._id)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-                >
-                  Move to Cart
-                </button>
+            return (
+              <div
+                key={item._id}
+                className="border rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white relative"
+              >
+                {/* 💖 Remove (filled heart like ProductCard) */}
                 <button
                   onClick={() => handleRemove(item._id)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm"
+                  className="absolute top-3 right-3 bg-white/90 backdrop-blur-md p-2 rounded-full shadow hover:scale-110 transition"
                 >
-                  Remove
+                  <Heart size={20} className="text-red-500 fill-red-500" />
                 </button>
+
+                {/* 🖼 same clickable image */}
+                <Link href={`/${categorySlug}/${productSlug}`}>
+                  <img
+                    src={image}
+                    alt={item?.name}
+                    className="w-full h-56 object-cover"
+                  />
+                </Link>
+
+                <div className="p-4 space-y-2">
+                  {/* 📝 same clickable title */}
+                  <Link href={`/${categorySlug}/${productSlug}`}>
+                    <h3 className="font-semibold text-gray-800 hover:text-indigo-600">
+                      {item?.name}
+                    </h3>
+                  </Link>
+
+                  <p className="text-sm text-gray-500">₹{item?.price}</p>
+
+                  <button
+                    onClick={() => handleMoveToCart(item)}
+                    className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
+                  >
+                    Move to Cart
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

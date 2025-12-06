@@ -78,7 +78,6 @@ export default function UserOrdersPage() {
                 </div>
               ))}
             </div>
-
           </div>
         ))}
       </div>
