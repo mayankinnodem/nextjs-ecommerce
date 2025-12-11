@@ -35,7 +35,7 @@ export default function DashboardHome() {
         // Parallel fetch all three endpoints
         const [productsRes, ordersRes, usersRes] = await Promise.all([
           fetch("/api/admin/products"),
-          fetch("/api/admin/orders"),
+          fetch("/api/admin/admin-orders"),
           fetch("/api/admin/users"),
         ]);
 

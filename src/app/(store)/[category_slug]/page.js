@@ -8,8 +8,9 @@ export default async function CategoryPage({ params }) {
     process.env.NEXTAUTH_URL ||
     "http://localhost:3000";
 
+  // ⭐ Correct URL (dynamic slug)
   const res = await fetch(
-    `${baseUrl}/api/store/products?category_slug=${category_slug}`,
+    `${baseUrl}/api/store/products/${category_slug}`,
     { cache: "no-store" }
   );
 
@@ -34,7 +35,6 @@ export default async function CategoryPage({ params }) {
             <ProductCard
               key={product._id}
               product={product}
-              /* ✅ YAHI SE URL FIX HOGA */
               category_slug={product?.category?.slug}
             />
           ))}

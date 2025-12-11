@@ -1,6 +1,7 @@
 import React from "react";
+import ProductActions from "./ProductActions";
+import SuggestedProducts from "@/components/shop/SuggestedProducts";
 
-// ✅ FUNCTION MUST BE ABOVE COMPONENT
 async function getProduct(category_slug, product_slug) {
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ||
@@ -16,80 +17,47 @@ async function getProduct(category_slug, product_slug) {
 }
 
 export default async function ProductPage({ params }) {
-
-  const resolvedParams = await params; // ✅ Next 15 FIX
-  const { category_slug, product_slug } = resolvedParams;
+  const { category_slug, product_slug } = await params;
 
   const data = await getProduct(category_slug, product_slug);
 
   if (!data?.success) {
     return (
-      <div className="container">
-        <h2 className="text-center text-xl text-red-500 mt-10">
-          Product Not Found
-        </h2>
-      </div>
+      <h2 className="text-center text-red-500 mt-10 text-xl font-semibold">
+        Product Not Found
+      </h2>
     );
   }
 
   const product = data.product;
+  const price = product.salePrice || product.price;
 
   return (
     <div className="container mx-auto py-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        
+        <img
+          src={product.images?.[0]?.url}
+          alt={product.name}
+          className="w-full rounded-xl shadow-md border"
+        />
 
-        <div>
-          {product?.images?.length > 0 ? (
-            <img
-              src={product.images[0].url}
-              alt={product.name}
-              className="w-full rounded-lg"
-            />
-          ) : (
-            <div className="text-gray-600">No Image</div>
-          )}
-        </div>
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold">{product.name}</h1>
+          <p className="text-gray-600">{product.description}</p>
 
-        <div>
-          <h1 className="text-3xl font-bold">{product.name}</h1>
-          <p className="text-gray-500 mt-3">{product.description}</p>
+          <p className="text-3xl font-bold text-indigo-700">₹{price}</p>
 
-          <div className="mt-5">
-            <p className="text-2xl font-semibold">
-              ₹{product.salePrice || product.price}
-            </p>
-
-            {product.discount > 0 && (
-              <p className="text-gray-400 line-through">₹{product.price}</p>
-            )}
-          </div>
-
-          <div className="mt-5">
-            <p className="text-sm">Brand: {product?.brand?.name || "N/A"}</p>
-            <p className="text-sm">Category: {product?.category?.name}</p>
-            <p className="text-sm">Sub Category: {product?.subCategory}</p>
-            <p className="text-sm">Gender: {product?.gender}</p>
-            <p className="text-sm">Stock: {product?.stock}</p>
-          </div>
-
-          {product?.attributes?.length > 0 && (
-            <div className="mt-5">
-              <h3 className="font-semibold">Attributes</h3>
-              <ul className="list-disc ml-5">
-                {product.attributes.map((attr, index) => (
-                  <li key={index}>
-                    {attr.name}: {attr.value}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <button className="mt-6 px-6 py-3 bg-black text-white rounded-lg">
-            Add to Cart
-          </button>
+          {/* ⭐ Add to Wishlist + Add to Cart */}
+          <ProductActions product={product} />
         </div>
       </div>
+
+      {/* ⭐ Suggested Section */}
+      <SuggestedProducts
+        categorySlug={product.category?.slug}
+        currentProductId={product._id}
+      />
     </div>
   );
 }

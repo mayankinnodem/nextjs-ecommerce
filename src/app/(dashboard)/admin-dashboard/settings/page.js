@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Loader2, CheckCircle2, XCircle, LogOut } from "lucide-react";
 
 export default function SettingsPage() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
   const [profile, setProfile] = useState({
-    name: "Admin User",
-    email: "admin@example.com",
+    name: "",
+    email: "",
   });
 
   const [security, setSecurity] = useState({
@@ -14,10 +19,43 @@ export default function SettingsPage() {
   });
 
   const [site, setSite] = useState({
-    siteName: "RMK Leathers",
+    siteName: "",
     currency: "INR",
     maintenance: false,
   });
+
+  // Load saved settings (from backend)
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const res = await fetch("/api/admin/setting");
+        const data = await res.json();
+
+        if (data.success) {
+          setProfile({
+            name: data.settings.siteAdminName,
+            email: data.settings.siteAdminEmail,
+          });
+
+          setSecurity({
+            password: "",
+            twoFA: data.settings.twoFA,
+          });
+
+          setSite({
+            siteName: data.settings.siteName,
+            currency: data.settings.currency,
+            maintenance: data.settings.maintenance,
+          });
+        }
+      } catch (err) {
+        console.log("Settings Load Error:", err);
+      }
+      setLoading(false);
+    }
+
+    loadData();
+  }, []);
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -40,15 +78,70 @@ export default function SettingsPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("✅ Settings saved successfully");
-    // TODO: API call to update settings
+    setSaving(true);
+    setMsg(null);
+
+    try {
+      const res = await fetch("/api/admin/setting/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile,
+          security,
+          site,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setMsg({ type: "success", text: "Settings saved successfully!" });
+      } else {
+        setMsg({ type: "error", text: data.message || "Failed to save settings" });
+      }
+    } catch (err) {
+      setMsg({ type: "error", text: "Something went wrong" });
+    }
+
+    setSaving(false);
   };
+
+  // 🔥 Logout Function
+  const handleLogout = async () => {
+    await fetch("/api/admin/setting/logout", { method: "GET" });
+
+    // Remove token from localStorage
+    localStorage.removeItem("adminToken");
+
+    // Redirect to login
+    window.location.href = "/admin-login";
+  };
+
+  if (loading) {
+    return (
+      <p className="text-gray-600 flex items-center gap-2">
+        <Loader2 className="animate-spin" /> Loading Settings...
+      </p>
+    );
+  }
 
   return (
     <div className="text-gray-900">
       <h2 className="text-3xl font-bold mb-8">⚙️ Settings</h2>
+
+      {/* STATUS MESSAGE */}
+      {msg && (
+        <div
+          className={`p-3 rounded-md mb-4 flex items-center gap-2 ${
+            msg.type === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+          }`}
+        >
+          {msg.type === "success" ? <CheckCircle2 /> : <XCircle />}
+          {msg.text}
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
@@ -85,9 +178,7 @@ export default function SettingsPage() {
         <section>
           <h3 className="text-xl font-semibold mb-4">🔒 Security</h3>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Change Password
-            </label>
+            <label className="block text-sm font-medium mb-1">Change Password</label>
             <input
               type="password"
               name="password"
@@ -123,6 +214,7 @@ export default function SettingsPage() {
               className="w-full border rounded-md px-3 py-2"
             />
           </div>
+
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Currency</label>
             <select
@@ -136,6 +228,7 @@ export default function SettingsPage() {
               <option value="EUR">€ EUR</option>
             </select>
           </div>
+
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -149,12 +242,24 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Save Button */}
+        {/* Save Settings */}
         <button
           type="submit"
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+          disabled={saving}
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
         >
+          {saving && <Loader2 size={18} className="animate-spin" />}
           Save Changes
+        </button>
+
+        {/* 🔥 LOGOUT BUTTON */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-4 bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 flex items-center gap-2"
+        >
+          <LogOut size={18} />
+          Logout
         </button>
       </form>
     </div>

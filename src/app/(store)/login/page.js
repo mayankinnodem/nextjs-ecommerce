@@ -1,22 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const redirect = params.get("redirect") || "/"; // ⭐ default home
+
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const inputRefs = useRef([]);
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("error");
+  const [msg, setMsg] = useState("");
+  const [type, setType] = useState("");
 
-  // Send OTP
+  const showMsg = (text, t = "error") => {
+    setMsg(text);
+    setType(t);
+    setTimeout(() => setMsg(""), 1800);
+  };
+
+  // OTP UI logic
+  const handleOtpChange = (val, idx) => {
+    if (!/^\d*$/.test(val)) return;
+
+    const newOtp = [...otp];
+    newOtp[idx] = val;
+    setOtp(newOtp);
+
+    if (val !== "" && idx < 5) inputRefs.current[idx + 1].focus();
+    if (newOtp.join("").length === 6) handleVerifyOtp(newOtp.join(""));
+  };
+
   const handleSendOtp = async () => {
-    if (!phone) {
-      setMessage("Please enter your phone number");
-      setMessageType("error");
-      return;
-    }
+    if (phone.length !== 10) return showMsg("Enter valid phone number");
 
     setLoading(true);
     try {
@@ -25,144 +44,118 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       });
+
       const data = await res.json();
       if (data.success) {
         setOtpSent(true);
-        setMessage(`OTP sent to ${phone}`);
-        setMessageType("success");
+        showMsg(`OTP sent to ${phone}`, "success");
       } else {
-        setMessage(data.message || "Failed to send OTP");
-        setMessageType("error");
+        showMsg(data.message);
       }
-    } catch (err) {
-      console.error(err);
-      setMessage("Something went wrong. Try again.");
-      setMessageType("error");
-    } finally {
-      setLoading(false);
+    } catch {
+      showMsg("Server error");
     }
+    setLoading(false);
   };
 
-  // Verify OTP
-  const handleVerifyOtp = async () => {
-    if (!otp) {
-      setMessage("Please enter OTP");
-      setMessageType("error");
-      return;
-    }
+  const handleVerifyOtp = async (fullOtp) => {
+    if (!fullOtp || fullOtp.length !== 6) return;
 
     setLoading(true);
+
     try {
       const res = await fetch("/api/user/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ phone, otp: fullOtp }),
       });
+
       const data = await res.json();
 
       if (data.success && data.user) {
-  // Store extended user info for checkout convenience
-  const userObj = {
-    _id: data.user._id,
-    phone: data.user.phone,
-    name: data.user.name || "",
-    profilePic: data.user.profilePic?.url || "",
-    email: data.user.email || "",
-    address: data.user.address || "", // primary address
-    city: data.user.city || "",
-    state: data.user.state || "",
-    pincode: data.user.pincode || "",
-    country: data.user.country || "India", // default to India
-  };
+        localStorage.setItem("user", JSON.stringify(data.user));
+        showMsg("Login successful!", "success");
 
-  localStorage.setItem("user", JSON.stringify(userObj));
-
-  setMessage("Login successful!");
-  setMessageType("success");
-
-  setTimeout(() => window.location.href = "/", 800);
-} else {
-  setMessage(data.message || "Invalid OTP. Try again.");
-  setMessageType("error");
-}
-
-    } catch (err) {
-      console.error(err);
-      setMessage("Something went wrong. Try again.");
-      setMessageType("error");
-    } finally {
-      setLoading(false);
+        setTimeout(() => router.replace(redirect), 600); // ⭐ exact return here
+      } else {
+        showMsg(data.message || "Invalid OTP");
+      }
+    } catch {
+      showMsg("Server error");
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-3">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+
         {!otpSent ? (
           <>
             <h1 className="text-2xl font-bold mb-6 text-center">Login / Register</h1>
+
             <input
               type="tel"
-              placeholder="Enter phone"
+              placeholder="Enter 10 digit phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              className="border p-3 w-full rounded mb-4"
+              className="border p-3 w-full rounded mb-4 text-lg"
             />
+
             <button
               onClick={handleSendOtp}
               disabled={loading}
-              className={`bg-blue-500 text-white w-full p-3 rounded transition flex items-center justify-center ${
-                loading ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-600"
+              className={`bg-blue-600 text-white w-full p-3 rounded-lg font-semibold transition ${
+                loading ? "opacity-60 cursor-not-allowed" : "hover:bg-blue-700"
               }`}
             >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Sending...</span>
-                </div>
-              ) : (
-                "Send OTP"
-              )}
+              {loading ? "Sending OTP..." : "Send OTP"}
             </button>
           </>
         ) : (
           <>
             <h1 className="text-2xl font-bold mb-6 text-center">Enter OTP</h1>
-            <input
-              type="text"
-              placeholder="Enter OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              className="border p-3 w-full rounded mb-4"
-            />
+
+            {/* ⭐ OTP 6 boxes auto-focus */}
+            <div className="flex justify-between mb-6">
+              {otp.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={(el) => (inputRefs.current[i] = el)}
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(e.target.value, i)}
+                  className="w-12 h-12 border text-center rounded-lg text-xl font-bold focus:ring-2 ring-blue-500"
+                />
+              ))}
+            </div>
+
             <button
-              onClick={handleVerifyOtp}
+              onClick={() => handleVerifyOtp(otp.join(""))}
               disabled={loading}
-              className={`bg-green-500 text-white w-full p-3 rounded transition flex items-center justify-center ${
-                loading ? "opacity-70 cursor-not-allowed" : "hover:bg-green-600"
+              className={`bg-green-600 text-white w-full p-3 rounded-lg font-semibold transition ${
+                loading ? "opacity-60 cursor-not-allowed" : "hover:bg-green-700"
               }`}
             >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Verifying...</span>
-                </div>
-              ) : (
-                "Verify OTP"
-              )}
+              {loading ? "Verifying..." : "Verify OTP"}
             </button>
+
             <p
               onClick={() => setOtpSent(false)}
-              className="mt-4 text-sm text-blue-500 cursor-pointer hover:underline text-center"
+              className="mt-4 text-blue-500 text-center cursor-pointer hover:underline"
             >
               Edit phone
             </p>
           </>
         )}
 
-        {message && (
-          <p className={`mt-4 text-center ${messageType === "success" ? "text-green-500" : "text-red-500"}`}>
-            {message}
+        {/* message */}
+        {msg && (
+          <p className={`mt-4 text-center font-semibold ${
+            type === "success" ? "text-green-600" : "text-red-500"
+          }`}>
+            {msg}
           </p>
         )}
       </div>

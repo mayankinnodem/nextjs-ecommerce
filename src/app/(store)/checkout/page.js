@@ -1,22 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import countriesData from "@/lib/countries.json" assert { type: "json" };
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const params = useSearchParams();
+  const redirectAfter = params.get("redirect") || "/";
 
-  const [initialized, setInitialized] = useState(false);
-  const [cartItems, setCartItems] = useState([]);
   const [user, setUser] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
+  const [initialized, setInitialized] = useState(false);
 
-  // Dropdown lists
   const [countries] = useState(countriesData);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
 
-  // Address
+  const [paymentMode, setPaymentMode] = useState("COD");
+  const [loading, setLoading] = useState(false);
+  const [sameAsProfile, setSameAsProfile] = useState(true);
+
   const [address, setAddress] = useState({
     name: "",
     phone: "",
@@ -28,129 +32,77 @@ export default function CheckoutPage() {
     pincode: "",
   });
 
-  const [paymentMode, setPaymentMode] = useState("COD");
-  const [loading, setLoading] = useState(false);
-
-  // Utility functions
-  const handleNumberInput = (value) => value.replace(/\D/g, "");
-  const validatePhone = (num) => /^\d{10}$/.test(num);
-  const validatePincode = (num) => /^\d{6}$/.test(num);
-
-  // Load user + cart from localStorage
+  // -----------------------------------
+  // LOAD USER + CART + PREFILL ADDRESS
+  // -----------------------------------
   useEffect(() => {
-    const localUser = JSON.parse(localStorage.getItem("user") || "null");
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]").map((i) => ({
-      ...i,
-      price: Number(i.price),
-      quantity: Number(i.quantity),
-    }));
+    const u = JSON.parse(localStorage.getItem("user") || "null");
+    const c = JSON.parse(localStorage.getItem("cart") || "[]");
 
-    if (!localUser) return router.push("/login");
+    if (!u) {
+      router.push(`/auth/login?redirect=/checkout`);
+      return;
+    }
 
-    setCartItems(cart);
-    setUser(localUser);
+    setUser(u);
+    setCartItems(c);
 
-    // Load country → states
-    const selectedCountry = countries.find(
-      (c) => c.name === (localUser.country || "India")
-    );
-    const countryStates = selectedCountry?.states || [];
-    setStates(countryStates);
+    const countryObj = countries.find(c => c.name === (u.country || "India"));
+    setStates(countryObj?.states || []);
 
-    // Load state → cities
-    const selectedState = countryStates.find((s) => s.name === localUser.state);
-    setCities(selectedState?.cities || []);
+    const stateObj = countryObj?.states?.find(s => s.name === u.state);
+    setCities(stateObj?.cities || []);
 
-    // Prefill address
     setAddress({
-      name: localUser.name || "",
-      phone: localUser.phone || "",
+      name: u.name || "",
+      phone: u.phone || "",
       alternatePhone: "",
-      street: localUser.address || "",
-      city: localUser.city || "",
-      state: localUser.state || "",
-      pincode: localUser.pincode || "",
-      country: localUser.country || "India",
+      street: u.address || "",
+      city: u.city || "",
+      state: u.state || "",
+      pincode: u.pincode || "",
+      country: u.country || "India",
     });
 
     setInitialized(true);
   }, []);
 
-  // COUNTRY CHANGE → update states
+  // -----------------------------------
+  // HANDLE DROPDOWNS
+  // -----------------------------------
   useEffect(() => {
-    const selectedCountry = countries.find(
-      (c) => c.name === address.country
-    );
-
-    setStates(selectedCountry?.states || []);
-
-    const stateExists = selectedCountry?.states.some(
-      (s) => s.name === address.state
-    );
-
-    if (!stateExists) {
-      setAddress((prev) => ({ ...prev, state: "", city: "" }));
-      setCities([]);
-    } else {
-      setCities(
-        selectedCountry.states.find((s) => s.name === address.state)?.cities ||
-          []
-      );
-    }
+    const c = countries.find(x => x.name === address.country);
+    setStates(c?.states || []);
   }, [address.country]);
 
-  // STATE CHANGE → update cities
   useEffect(() => {
-    const selectedState = states.find((s) => s.name === address.state);
-
-    const cityExists = selectedState?.cities.includes(address.city);
-
-    if (!cityExists) {
-      setAddress((prev) => ({ ...prev, city: "" }));
-    }
-
-    setCities(selectedState?.cities || []);
+    const s = states.find(x => x.name === address.state);
+    setCities(s?.cities || []);
   }, [address.state]);
 
-  // Totals
-  const subtotal = cartItems.reduce(
-    (total, i) => total + i.price * i.quantity,
-    0
-  );
+  // -----------------------------------
+  // PRICE CALCULATION
+  // -----------------------------------
+  const subtotal = cartItems.reduce((t, i) => t + i.price * i.quantity, 0);
   const shipping = subtotal > 0 ? 99 : 0;
   const total = subtotal + shipping;
 
-  // Place order
+  // ---------------- VALIDATION ----------------
+  const validatePhone = v => /^\d{10}$/.test(v);
+  const validatePincode = v => /^\d{6}$/.test(v);
+
+  // -----------------------------------
+  // PLACE ORDER
+  // -----------------------------------
   const handlePlaceOrder = async () => {
-    if (!validatePhone(address.phone)) {
-      alert("⚠️ Enter a valid 10-digit phone number.");
-      return;
-    }
+    if (!cartItems.length) return alert("Cart empty.");
 
-    if (address.alternatePhone && !validatePhone(address.alternatePhone)) {
-      alert("⚠️ Enter a valid 10-digit alternate phone number.");
-      return;
-    }
-
-    if (!validatePincode(address.pincode)) {
-      alert("⚠️ Enter a valid 6-digit pincode.");
-      return;
-    }
-
-    if (
-      !address.name ||
-      !address.street ||
-      !address.city ||
-      !address.state
-    ) {
-      alert("⚠️ Fill all required shipping details.");
-      return;
-    }
-
-    if (!cartItems.length) {
-      alert("⚠️ Cart is empty.");
-      return;
-    }
+    if (!validatePhone(address.phone)) return alert("Enter valid phone.");
+    if (address.alternatePhone && !validatePhone(address.alternatePhone))
+      return alert("Invalid alternate phone.");
+    if (!validatePincode(address.pincode)) return alert("Invalid pincode.");
+    if (!address.name || !address.street || !address.city || !address.state)
+      return alert("Fill all required shipping info.");
 
     setLoading(true);
 
@@ -161,13 +113,13 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           userId: user._id,
           address,
-          items: cartItems.map((item) => ({
-            productId: item._id,
-            name: item.name,
-            price: Number(item.price),
-            quantity: Number(item.quantity),
+          items: cartItems.map(i => ({
+            productId: i._id,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
           })),
-          total,
+          totalAmount: total,
           paymentMode,
         }),
       });
@@ -175,15 +127,12 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (data.success) {
-        alert("✅ Order Placed Successfully!");
         localStorage.removeItem("cart");
+        alert("Order Placed Successfully!");
         router.push("/user-dashboard/orders");
-      } else {
-        alert("❌ " + data.message);
-      }
-    } catch (error) {
-      alert("❌ Something went wrong!");
-      console.error(error);
+      } else alert(data.message);
+    } catch (err) {
+      alert("Server error, try again.");
     }
 
     setLoading(false);
@@ -192,198 +141,202 @@ export default function CheckoutPage() {
   if (!initialized)
     return (
       <div className="min-h-screen flex justify-center items-center">
-        <p className="text-lg text-gray-600">Loading checkout...</p>
+        <p className="text-lg text-gray-600">Preparing checkout...</p>
       </div>
     );
 
+  // -----------------------------------
+  // UI RENDER
+  // -----------------------------------
   return (
-    <div className="min-h-screen bg-gray-100 py-10 flex justify-center">
-      <div className="max-w-6xl w-full bg-white rounded-2xl shadow-lg p-8">
+    <div className="min-h-screen bg-gray-100 py-10 px-4 flex justify-center">
+      <div className="max-w-6xl w-full bg-white rounded-2xl shadow-xl p-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
-          Checkout 🛒
+          Checkout 🛍️
         </h1>
 
+        {/* GRID */}
         <div className="grid md:grid-cols-2 gap-10">
-          {/* SHIPPING DETAILS */}
+
+          {/* SHIPPING */}
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Shipping Details</h2>
+            <div className="flex justify-between">
+              <h2 className="text-2xl font-semibold mb-4">Shipping Details</h2>
 
-            <div className="space-y-4">
-              <input
-                placeholder="Full Name"
-                value={address.name}
-                onChange={(e) =>
-                  setAddress({ ...address, name: e.target.value })
-                }
-                className="w-full border p-3 rounded-lg"
-              />
+              <div className="flex items-center gap-3">
+  <span className="text-sm font-semibold">
+    {sameAsProfile ? "Using Profile" : "Edit Address"}
+  </span>
 
-              <input
-                placeholder="Phone (10 digits)"
-                value={address.phone}
-                maxLength={10}
-                onChange={(e) =>
-                  setAddress({
-                    ...address,
-                    phone: handleNumberInput(e.target.value),
-                  })
-                }
-                className={`w-full border p-3 rounded-lg ${
-                  validatePhone(address.phone) ? "" : "border-red-500"
-                }`}
-              />
+  <div
+    onClick={() => setSameAsProfile(!sameAsProfile)}
+    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all flex items-center 
+      ${sameAsProfile ? "bg-indigo-600" : "bg-gray-300"}`}
+  >
+    <div
+      className={`w-5 h-5 rounded-full bg-white shadow-md transition-all 
+        ${sameAsProfile ? "ml-5" : "ml-0"}`}
+    />
+  </div>
+</div>
 
-              <input
-                placeholder="Alternate Phone (Optional)"
-                value={address.alternatePhone}
-                maxLength={10}
-                onChange={(e) =>
-                  setAddress({
-                    ...address,
-                    alternatePhone: handleNumberInput(e.target.value),
-                  })
-                }
-                className={`w-full border p-3 rounded-lg ${
-                  address.alternatePhone &&
-                  !validatePhone(address.alternatePhone)
-                    ? "border-red-500"
-                    : ""
-                }`}
-              />
-
-              <input
-                placeholder="Street Address"
-                value={address.street}
-                onChange={(e) =>
-                  setAddress({ ...address, street: e.target.value })
-                }
-                className="w-full border p-3 rounded-lg"
-              />
-
-              <select
-                value={address.country}
-                onChange={(e) =>
-                  setAddress({ ...address, country: e.target.value })
-                }
-                className="w-full border p-3 rounded-lg"
-              >
-                {countries.map((c) => (
-                  <option key={c.name} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={address.state}
-                onChange={(e) =>
-                  setAddress({ ...address, state: e.target.value })
-                }
-                className="w-full border p-3 rounded-lg"
-              >
-                <option value="">Select State</option>
-                {states.map((s) => (
-                  <option key={s.name} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={address.city}
-                onChange={(e) =>
-                  setAddress({ ...address, city: e.target.value })
-                }
-                className="w-full border p-3 rounded-lg"
-              >
-                <option value="">Select City</option>
-                {cities.map((c, index) => (
-  <option key={index} value={typeof c === "string" ? c : c.name}>
-    {typeof c === "string" ? c : c.name}
-  </option>
-))}
-  </select>
-
-              <input
-                placeholder="Pincode (6 digits)"
-                value={address.pincode}
-                maxLength={6}
-                onChange={(e) =>
-                  setAddress({
-                    ...address,
-                    pincode: handleNumberInput(e.target.value),
-                  })
-                }
-                className={`w-full border p-3 rounded-lg ${
-                  validatePincode(address.pincode) ? "" : "border-red-500"
-                }`}
-              />
-
-              <select
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-                className="w-full border p-3 rounded-lg"
-              >
-                <option value="COD">Cash on Delivery</option>
-                <option value="Online">Online Payment</option>
-              </select>
             </div>
+
+            {sameAsProfile ? (
+              <div className="space-y-1 bg-purple-50 p-4 rounded-lg border">
+                <p>{user.name}</p>
+                <p>📞 {user.phone}</p>
+                <p>{user.address}</p>
+                <p>
+                  {user.city}, {user.state} - {user.pincode}
+                </p>
+                <p>{user.country}</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <input
+                  placeholder="Full Name"
+                  value={address.name}
+                  onChange={e => setAddress({ ...address, name: e.target.value })}
+                  className="w-full border p-3 rounded-lg"
+                />
+
+                <input
+                  placeholder="Phone (10 digits)"
+                  value={address.phone}
+                  maxLength={10}
+                  onChange={e =>
+                    setAddress({ ...address, phone: e.target.value.replace(/\D/g, "") })
+                  }
+                  className={`w-full border p-3 rounded-lg ${
+                    validatePhone(address.phone) ? "" : "border-red-500"
+                  }`}
+                />
+
+                <input
+                  placeholder="Alternate Phone"
+                  value={address.alternatePhone}
+                  maxLength={10}
+                  onChange={e =>
+                    setAddress({ ...address, alternatePhone: e.target.value.replace(/\D/g, "") })
+                  }
+                  className="w-full border p-3 rounded-lg"
+                />
+
+                <input
+                  placeholder="Street Address"
+                  value={address.street}
+                  onChange={e => setAddress({ ...address, street: e.target.value })}
+                  className="w-full border p-3 rounded-lg"
+                />
+
+                <select
+                  value={address.country}
+                  onChange={e => setAddress({ ...address, country: e.target.value })}
+                  className="w-full border p-3 rounded-lg"
+                >
+                  {countries.map(c => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={address.state}
+                  onChange={e => setAddress({ ...address, state: e.target.value })}
+                  className="w-full border p-3 rounded-lg"
+                >
+                  <option>Select State</option>
+                  {states.map(s => (
+                    <option key={s.name} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={address.city}
+                  onChange={e => setAddress({ ...address, city: e.target.value })}
+                  className="w-full border p-3 rounded-lg"
+                >
+                  <option>Select City</option>
+                  {cities.map((c, idx) => (
+                    <option key={idx} value={c.name || c}>{c.name || c}</option>
+                  ))}
+                </select>
+
+                <input
+                  placeholder="Pincode"
+                  value={address.pincode}
+                  maxLength={6}
+                  onChange={e =>
+                    setAddress({ ...address, pincode: e.target.value.replace(/\D/g, "") })
+                  }
+                  className={`w-full border p-3 rounded-lg ${
+                    validatePincode(address.pincode) ? "" : "border-red-500"
+                  }`}
+                />
+
+                <select
+                  value={paymentMode}
+                  onChange={e => setPaymentMode(e.target.value)}
+                  className="w-full border p-3 rounded-lg"
+                >
+                  <option value="COD">Cash on Delivery</option>
+                  <option value="Online">Online Payment</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* ORDER SUMMARY */}
           <div>
             <h2 className="text-2xl font-semibold mb-4">Order Summary</h2>
 
-            <div className="space-y-4">
-              {cartItems.map((item) => (
-                <div key={item._id} className="flex justify-between border-b pb-2">
+            <div className="space-y-3">
+              {cartItems.map(i => (
+                <div key={i._id} className="flex justify-between border-b pb-2">
                   <div className="flex gap-3 items-center">
                     <img
-                      src={item.image || "/placeholder.png"}
-                      alt={item.name}
+                      src={i.image}
                       className="w-16 h-16 rounded object-cover"
                     />
                     <div>
-                      <p className="font-medium text-gray-800">{item.name}</p>
-                      <p className="text-gray-600 text-sm">
-                        Qty: {item.quantity}
-                      </p>
+                      <p className="font-medium">{i.name}</p>
+                      <p className="text-gray-600 text-sm">Qty: {i.quantity}</p>
                     </div>
                   </div>
                   <p className="font-semibold text-gray-700">
-                    ₹{(item.price * item.quantity).toLocaleString()}
+                    ₹{(i.price * i.quantity).toLocaleString()}
                   </p>
                 </div>
               ))}
             </div>
 
-            {cartItems.length > 0 && (
-              <div className="mt-6 border-t pt-4 space-y-2 text-gray-700">
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span>₹{subtotal.toLocaleString()}</span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span>Shipping:</span>
-                  <span>₹{shipping}</span>
-                </div>
-
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total:</span>
-                  <span>₹{total.toLocaleString()}</span>
-                </div>
-
-                <button
-                  onClick={handlePlaceOrder}
-                  disabled={loading}
-                  className="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-60"
-                >
-                  {loading ? "Placing Order..." : "Place Order"}
-                </button>
+            {/* PRICE SUMMARY */}
+            <div className="mt-6 border-t pt-4 space-y-2 text-gray-700">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span>₹{subtotal.toLocaleString()}</span>
               </div>
-            )}
+
+              <div className="flex justify-between">
+                <span>Shipping:</span>
+                <span>₹{shipping}</span>
+              </div>
+
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total:</span>
+                <span>₹{total.toLocaleString()}</span>
+              </div>
+
+              <button
+                onClick={handlePlaceOrder}
+                disabled={loading}
+                className="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-60"
+              >
+                {loading ? "Placing Order..." : "Place Order"}
+              </button>
+            </div>
           </div>
+
         </div>
       </div>
     </div>

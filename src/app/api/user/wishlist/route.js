@@ -4,6 +4,7 @@ import Wishlist from "@/models/Wishlist";
 import Product from "@/models/Product"; // needed for populate
 
 // ✅ Get wishlist products (full product objects)
+// ✅ Get wishlist products (full product objects)
 export async function GET(req) {
   try {
     await connectDB();
@@ -21,14 +22,17 @@ export async function GET(req) {
     const items = await Wishlist.find({ userId })
       .populate({
         path: "productId",
-        model: Product, // or "Product"
+        model: Product,
+        populate: {
+          path: "category",
+          select: "slug name",  // ⭐ slug मिल जाएगा
+        },
       })
       .lean();
 
-    // सिर्फ products की list भेज रहे हैं
     const products = items
       .map((it) => it.productId)
-      .filter(Boolean); // अगर कभी कोई broken ref हो तो
+      .filter(Boolean);
 
     return NextResponse.json({ success: true, wishlist: products });
   } catch (error) {
@@ -39,6 +43,7 @@ export async function GET(req) {
     );
   }
 }
+
 
 // ✅ Add to wishlist
 export async function POST(req) {

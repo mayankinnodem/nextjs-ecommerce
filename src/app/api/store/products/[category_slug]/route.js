@@ -7,7 +7,8 @@ export async function GET(req, { params }) {
   try {
     await connectDB();
 
-    const { category_slug } = params;
+    // ⭐ Next.js v15 requires awaiting params
+    const { category_slug } = await params;
 
     if (!category_slug) {
       return NextResponse.json(
@@ -16,7 +17,7 @@ export async function GET(req, { params }) {
       );
     }
 
-    // ✅ Find Category
+    // 🔍 Find Category by slug
     const category = await Category.findOne({ slug: category_slug }).lean();
 
     if (!category) {
@@ -26,7 +27,7 @@ export async function GET(req, { params }) {
       );
     }
 
-    // ✅ Find Products of that Category
+    // 📌 Fetch products of that category only
     const products = await Product.find({ category: category._id })
       .populate("category", "name slug")
       .populate("brand", "name slug")
@@ -45,6 +46,7 @@ export async function GET(req, { params }) {
       {
         success: false,
         message: "Internal Server Error",
+        error: error.message,
       },
       { status: 500 }
     );

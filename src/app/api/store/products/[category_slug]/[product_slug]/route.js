@@ -1,59 +1,53 @@
 import { connectDB } from "@/lib/dbConnect";
-import Category from "@/models/Category";
 import Product from "@/models/Product";
+import Category from "@/models/Category";
 import Brand from "@/models/Brand";
 import { NextResponse } from "next/server";
-
 
 export async function GET(req, context) {
   try {
     await connectDB();
 
-    const { params } = context;
+    // ✅ Next.js 15 fix — params is a Promise
+    const { category_slug, product_slug } = await context.params;
 
-    if (!params?.category_slug || !params?.product_slug) {
+    if (!category_slug || !product_slug) {
       return NextResponse.json(
-        { message: "Params missing" },
+        { success: false, message: "Slug missing" },
         { status: 400 }
       );
     }
 
-    const { category_slug, product_slug } = params;
-
-    const category = await Category.findOne({ slug: category_slug });
-
+    // 1️⃣ Find category by slug
+    const category = await Category.findOne({ slug: category_slug }).lean();
     if (!category) {
       return NextResponse.json(
-        { message: "Category not found" },
+        { success: false, message: "Category not found" },
         { status: 404 }
       );
     }
 
+    // 2️⃣ Find product by slug + category match
     const product = await Product.findOne({
       slug: product_slug,
       category: category._id,
     })
-      .populate("category", "name slug")
-      .populate("brand", "name")
+      .populate("brand")
+      .populate("category")
       .lean();
 
     if (!product) {
       return NextResponse.json(
-        { message: "Product not found" },
+        { success: false, message: "Product not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ success: true, product });
-
+    return NextResponse.json({ success: true, product }, { status: 200 });
   } catch (error) {
     console.error("Product GET API error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Internal Server Error",
-        error: error.message,
-      },
+      { success: false, message: error.message },
       { status: 500 }
     );
   }

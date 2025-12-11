@@ -1,8 +1,3 @@
-// Global ViewCartButton Component
-// Add this component inside your main layout (e.g., layout.js)
-// It will show a floating "View Cart" button whenever cart has items
-// Hidden on user dashboard & category pages
-
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
@@ -13,29 +8,35 @@ export default function ViewCartFloatingButton() {
   const router = useRouter();
   const [cartCount, setCartCount] = useState(0);
 
-  // pages where button should NOT appear
-  const hiddenPages = [
-    "/user-dashboard",
-    "/admin-dashboard",
-  ];
-
+  const hiddenPages = ["/user-dashboard", "/admin-dashboard"];
   const isCategoryPage = pathname?.startsWith("/category/");
 
-  useEffect(() => {
-    const loadCart = () => {
-      try {
-        const stored = JSON.parse(localStorage.getItem("cart") || "[]");
-        setCartCount(stored.length);
-      } catch {}
-    };
+useEffect(() => {
+  const loadCart = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("cart") || "[]");
+      const totalQty = stored.reduce((acc, item) => acc + item.quantity, 0);
+      setCartCount(totalQty);
+    } catch {}
+  };
 
-    loadCart();
+  loadCart();
 
-    window.addEventListener("storage", loadCart);
-    return () => window.removeEventListener("storage", loadCart);
-  }, []);
+  // ⭐ event listener improved
+  const updateListener = (e) => {
+    setCartCount(e.detail); // direct updated qty
+  };
 
-  // hide when cart empty or on restricted pages
+  window.addEventListener("cartUpdated", updateListener);
+  window.addEventListener("storage", loadCart);
+
+  return () => {
+    window.removeEventListener("cartUpdated", updateListener);
+    window.removeEventListener("storage", loadCart);
+  };
+}, []);
+
+
   if (cartCount === 0) return null;
   if (hiddenPages.includes(pathname)) return null;
   if (isCategoryPage) return null;

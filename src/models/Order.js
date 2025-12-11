@@ -22,14 +22,13 @@ const orderSchema = new mongoose.Schema(
       pincode: String,
     },
 
-    totalAmount: Number,   // ✔ backend se match
-
+    totalAmount: Number,
     paymentMode: { type: String, default: "COD" },
     paymentStatus: { type: String, default: "Pending" },
 
     status: { type: String, default: "Pending" },
-
-    expectedDelivery: Date,
+    cancelReason: String,
+    expectedDelivery: Date
   },
   { timestamps: true }
 );

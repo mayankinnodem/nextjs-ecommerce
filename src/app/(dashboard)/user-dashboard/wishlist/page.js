@@ -2,116 +2,170 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import Image from "next/image";
+import { Heart, ShoppingCart, Loader2 } from "lucide-react";
 
 export default function WishlistPage() {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [removing, setRemoving] = useState(null);
+  const [moving, setMoving] = useState(null);
 
   useEffect(() => {
-    const localUser = JSON.parse(localStorage.getItem("user"));
-    if (!localUser?._id) {
-      setLoading(false);
-      return;
-    }
-
-    fetch(`/api/user/wishlist?userId=${localUser._id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const products = data?.wishlist || [];
-        setWishlist(products);
-
-        const ids = products.map((p) => p._id);
-        localStorage.setItem("wishlistIds", JSON.stringify(ids));
-      })
-      .finally(() => setLoading(false));
+    loadWishlist();
   }, []);
 
+  const loadWishlist = async () => {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (!user?._id) return setLoading(false);
+
+    try {
+      const res = await fetch(`/api/user/wishlist?userId=${user._id}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      setWishlist(data?.wishlist || []);
+    } catch (err) {
+      console.log("Wishlist fetch error:", err);
+    }
+
+    setLoading(false);
+  };
+
+  const syncNavbarCounts = () => {
+    window.dispatchEvent(new Event("storage")); // refresh navbar icons
+  };
+
+  // ❤️ Remove
   const handleRemove = async (productId) => {
-    const localUser = JSON.parse(localStorage.getItem("user"));
+    setRemoving(productId);
+    const user = JSON.parse(localStorage.getItem("user"));
 
     await fetch(`/api/user/wishlist`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: localUser._id, productId }),
+      body: JSON.stringify({ userId: user._id, productId }),
     });
 
-    setWishlist((prev) => prev.filter((item) => item._id !== productId));
+    setWishlist((prev) => prev.filter((i) => i._id !== productId));
+    syncNavbarCounts();
 
-    const ids =
-      JSON.parse(localStorage.getItem("wishlistIds")).filter((id) => id !== productId);
-    localStorage.setItem("wishlistIds", JSON.stringify(ids));
+    setTimeout(() => setRemoving(null), 500);
   };
 
-  const handleMoveToCart = (product) => {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const existing = cart.find((item) => item._id === product._id);
+  // 🛒 Move to Cart
+  const handleMoveToCart = async (product) => {
+    setMoving(product._id);
 
-    if (existing) existing.quantity += 1;
+    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const exists = cart.find((i) => i._id === product._id);
+
+    if (exists) exists.quantity += 1;
     else cart.push({ ...product, quantity: 1 });
 
     localStorage.setItem("cart", JSON.stringify(cart));
     handleRemove(product._id);
-    alert("Moved to cart 🛒");
+
+    syncNavbarCounts();
+
+    setTimeout(() => {
+      alert("Moved to cart 🛒");
+      setMoving(null);
+    }, 500);
   };
 
-  if (loading) return <p className="text-center p-6 text-lg">Loading...</p>;
+  if (loading)
+    return (
+      <div className="text-center py-20">
+        <Loader2 className="animate-spin text-gray-500 mx-auto" size={34} />
+        <p className="mt-2 text-gray-600">Fetching your wishlist...</p>
+      </div>
+    );
 
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 flex items-center gap-3">
-        My Wishlist ❤️
-        <span className="text-sm bg-red-100 text-red-600 px-3 py-1 rounded-full">
-          {wishlist.length} items
-        </span>
-      </h1>
+    <div className="p-6 min-h-screen bg-gray-100">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">My Wishlist ❤️</h1>
+        {wishlist?.length > 0 && (
+          <span className="text-sm bg-red-100 text-red-700 px-3 py-1 rounded-full">
+            {wishlist.length} items
+          </span>
+        )}
+      </div>
 
       {wishlist.length === 0 ? (
-        <p className="text-gray-600 text-center text-lg">Your wishlist is empty.</p>
+        <div className="text-center mt-20">
+          <Image
+            src="/empty-wishlist.png"
+            alt="empty"
+            width={260}
+            height={260}
+            className="mx-auto opacity-80"
+          />
+          <p className="mt-6 text-gray-600 text-lg">Your wishlist is empty.</p>
+          <Link
+            href="/shop"
+            className="inline-block mt-5 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            Browse Products
+          </Link>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {wishlist.map((item) => {
-            const categorySlug = item?.categorySlug || item?.category?.slug || "unknown";
-            const productSlug = item?.slug || "product";
-            const image = item?.images?.[0]?.url || "/placeholder.png";
+            const categorySlug = item?.category?.slug || "category";
+            const productSlug = item?.slug || item._id;
+            const img = item?.images?.[0]?.url || "/placeholder.png";
 
             return (
               <div
                 key={item._id}
-                className="border rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white relative"
+                className={`relative bg-white shadow rounded-xl p-3 hover:shadow-lg transition-all ${
+                  removing === item._id ? "opacity-40 scale-95" : ""
+                }`}
               >
-                {/* 💖 Remove (filled heart like ProductCard) */}
+                {/* ❤️ Remove */}
                 <button
                   onClick={() => handleRemove(item._id)}
-                  className="absolute top-3 right-3 bg-white/90 backdrop-blur-md p-2 rounded-full shadow hover:scale-110 transition"
+                  className="absolute top-3 right-3 bg-white shadow p-2 rounded-full hover:scale-110 transition"
                 >
-                  <Heart size={20} className="text-red-500 fill-red-500" />
+                  <Heart className="text-red-500 fill-red-500" size={20} />
                 </button>
 
-                {/* 🖼 same clickable image */}
                 <Link href={`/${categorySlug}/${productSlug}`}>
-                  <img
-                    src={image}
+                  <Image
+                    src={img}
                     alt={item?.name}
-                    className="w-full h-56 object-cover"
+                    width={500}
+                    height={400}
+                    className="w-full h-56 object-cover rounded-lg hover:scale-105 transition duration-300"
                   />
                 </Link>
 
-                <div className="p-4 space-y-2">
-                  {/* 📝 same clickable title */}
+                <div className="p-3">
                   <Link href={`/${categorySlug}/${productSlug}`}>
-                    <h3 className="font-semibold text-gray-800 hover:text-indigo-600">
+                    <h3 className="font-semibold text-gray-800 hover:text-indigo-600 line-clamp-1">
                       {item?.name}
                     </h3>
                   </Link>
 
-                  <p className="text-sm text-gray-500">₹{item?.price}</p>
+                  <p className="text-indigo-700 text-lg font-bold mt-1">
+                    ₹{Number(item?.price).toLocaleString()}
+                  </p>
 
                   <button
                     onClick={() => handleMoveToCart(item)}
-                    className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
+                    disabled={moving === item._id}
+                    className="w-full mt-3 flex justify-center items-center bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-60"
                   >
-                    Move to Cart
+                    {moving === item._id ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      <>
+                        <ShoppingCart size={18} />
+                        <span className="ml-2">Move to Cart</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

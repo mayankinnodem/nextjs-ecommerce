@@ -2,17 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingCart, CheckCircle2, Loader2 } from "lucide-react";
 
 export default function ProductCard({ product }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
 
-  const categorySlug = product?.category?.slug || "unknown";
+  const categorySlug = product?.category?.slug || "category";
   const productSlug = product?.slug || "product";
   const image = product?.images?.[0]?.url || "/placeholder.png";
+  const price = product?.salePrice || product?.price;
 
-  // ✅ initial state from localStorage wishlistIds
+  // ⭐ Load wishlist state
   useEffect(() => {
     try {
       const ids = JSON.parse(localStorage.getItem("wishlistIds")) || [];
@@ -22,17 +25,17 @@ export default function ProductCard({ product }) {
     }
   }, [product._id]);
 
-  const syncWishlistIds = (updaterFn) => {
+  const syncWishlistIds = (fn) => {
     const current = JSON.parse(localStorage.getItem("wishlistIds")) || [];
-    const updated = updaterFn(current);
+    const updated = fn(current);
     localStorage.setItem("wishlistIds", JSON.stringify(updated));
   };
 
-  // ❤️ toggle wishlist
+  // ❤️ Wishlist
   const handleWishlistToggle = async () => {
     const localUser = JSON.parse(localStorage.getItem("user"));
     if (!localUser?._id) {
-      alert("Please login to use wishlist");
+      window.location.href = `/auth/login?redirect=/${categorySlug}/${productSlug}`;
       return;
     }
 
@@ -40,74 +43,75 @@ export default function ProductCard({ product }) {
     setBusy(true);
 
     try {
-      if (isWishlisted) {
-        // remove
-        await fetch("/api/user/wishlist", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: localUser._id,
-            productId: product._id,
-          }),
-        });
+      const method = isWishlisted ? "DELETE" : "POST";
+      await fetch("/api/user/wishlist", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: localUser._id,
+          productId: product._id,
+        }),
+      });
 
-        setIsWishlisted(false);
-        syncWishlistIds((ids) => ids.filter((id) => id !== product._id));
-      } else {
-        // add
-        await fetch("/api/user/wishlist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: localUser._id,
-            productId: product._id,
-          }),
-        });
+      setIsWishlisted(!isWishlisted);
 
-        setIsWishlisted(true);
-        syncWishlistIds((ids) =>
-          ids.includes(product._id) ? ids : [...ids, product._id]
-        );
-      }
+      syncWishlistIds((ids) =>
+        isWishlisted ? ids.filter((id) => id !== product._id) : [...ids, product._id]
+      );
     } catch (err) {
-      console.error("Wishlist toggle error:", err);
+      console.log("Wishlist toggle error:", err);
     } finally {
       setBusy(false);
     }
   };
 
-  // 🛒 Add to cart (same जैसा पहले था)
-  const handleAddToCart = () => {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  // 🛒 Add to cart with best UX
+const handleAddToCart = () => {
+  if (adding) return;
 
-    const existing = cart.find((item) => item._id === product._id);
+  setAdding(true);
 
-    if (existing) existing.quantity += 1;
-    else
-      cart.push({
-        _id: product._id,
-        name: product.name,
-        price: product.price,
-        image,
-        quantity: 1,
-      });
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const exists = cart.find((item) => item._id === product._id);
 
-    localStorage.setItem("cart", JSON.stringify(cart));
-    alert("Product added to cart ✅");
-  };
+  if (exists) exists.quantity += 1;
+  else cart.push({
+    _id: product._id,
+    name: product.name,
+    price,
+    image,
+    quantity: 1,
+  });
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+
+  // ⭐⭐⭐ Emit updated total items count (quantity based)
+  const totalQty = cart.reduce((acc, item) => acc + item.quantity, 0);
+  window.dispatchEvent(new CustomEvent("cartUpdated", { detail: totalQty }));
+
+  setTimeout(() => {
+    setAdding(false);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }, 1200);
+};
+
 
   return (
-    <div className="border rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white relative">
-      {/* ❤️ Wishlist Button */}
+    <div className="group border rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition relative bg-white">
+
+      {/* ❤️ Wishlist */}
       <button
         onClick={handleWishlistToggle}
         disabled={busy}
-        className="absolute top-3 right-3 bg-white/90 backdrop-blur-md p-2 rounded-full shadow hover:scale-110 transition"
+        className="absolute top-3 right-3 bg-white shadow-md p-2 rounded-full hover:scale-110 transition z-20"
       >
         <Heart
           size={20}
           className={
-            isWishlisted ? "text-red-500 fill-red-500" : "text-gray-700"
+            isWishlisted
+              ? "text-red-500 fill-red-500"
+              : "text-gray-600 group-hover:text-red-500"
           }
         />
       </button>
@@ -116,24 +120,63 @@ export default function ProductCard({ product }) {
         <img
           src={image}
           alt={product?.name}
-          className="w-full h-56 object-cover"
+          className="w-full h-56 object-cover group-hover:scale-105 transition duration-300"
         />
       </Link>
 
+      {product?.discount > 0 && (
+        <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded">
+          {product.discount}% OFF
+        </span>
+      )}
+
       <div className="p-4 space-y-2">
+
+        {/* Title */}
         <Link href={`/${categorySlug}/${productSlug}`}>
-          <h3 className="font-semibold text-gray-800 hover:text-indigo-600">
+          <h3 className="font-semibold text-gray-800 group-hover:text-indigo-600 line-clamp-1">
             {product.name}
           </h3>
         </Link>
 
-        <p className="text-sm text-gray-500">₹{product.price}</p>
+        {/* Price */}
+        <p className="text-lg font-bold text-indigo-700">₹{price}</p>
 
+        {/* Success badge */}
+        {added && (
+          <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
+            <CheckCircle2 size={18} />
+            Added to Cart
+          </div>
+        )}
+
+        {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
-          className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
+          disabled={adding || added}
+          className={`w-full py-2 rounded-lg flex items-center justify-center gap-2 transition 
+            ${
+              added
+                ? "bg-green-600 text-white"
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
+            }`}
         >
-          Add to Cart
+          {adding ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Adding...
+            </>
+          ) : added ? (
+            <>
+              <CheckCircle2 size={18} />
+              Added
+            </>
+          ) : (
+            <>
+              <ShoppingCart size={18} />
+              Add to Cart
+            </>
+          )}
         </button>
       </div>
     </div>
