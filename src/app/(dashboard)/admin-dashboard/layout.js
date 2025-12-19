@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
+// import "./globals.css";
+import "../../globals.css";
 
 export default function AdminDashboardLayout({ children }) {
   const router = useRouter();
@@ -29,7 +31,6 @@ export default function AdminDashboardLayout({ children }) {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <Sidebar />
-
       {/* Main */}
       <div className="flex flex-col flex-1">
         <Topbar />

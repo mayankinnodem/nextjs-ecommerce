@@ -1,5 +1,7 @@
 import { connectDB } from "@/lib/dbConnect";
 import Product from "@/models/Product";
+import Brand from "@/models/Brand";
+import Category from "@/models/Category";
 import { NextResponse } from "next/server";
 
 export async function GET(req, { params }) {
@@ -15,7 +17,10 @@ export async function GET(req, { params }) {
       );
     }
 
-    const product = await Product.findById(product_id).lean();
+    const product = await Product.findById(product_id)
+      .populate("brand", "name slug")
+      .populate("category", "name slug")
+      .lean();
 
     if (!product) {
       return NextResponse.json(
@@ -28,15 +33,10 @@ export async function GET(req, { params }) {
       { success: true, product },
       { status: 200 }
     );
-
   } catch (error) {
     console.error("Product GET API error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Internal Server Error",
-        error: error.message,
-      },
+      { success: false, message: "Internal Server Error" },
       { status: 500 }
     );
   }
