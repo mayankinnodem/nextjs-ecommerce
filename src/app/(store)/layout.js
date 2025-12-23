@@ -5,7 +5,7 @@ import Footer from "../../components/Footer";
 import ViewCartFloatingButton from "@/components/CartButton";
 
 export const metadata = {
-  title: "Sree Rama Trading",
+  title: "",
   description: "My E-commerce Website",
 };
 
