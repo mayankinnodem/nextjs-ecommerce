@@ -32,9 +32,12 @@ export default function Navbar() {
 
   const containerRef = useRef(null);
 
-  // 📌 LOAD TOP INFO
+  // 📌 LOAD TOP INFO (with caching to reduce server load)
   useEffect(() => {
-    fetch("/api/store/contact-section")
+    fetch("/api/store/contact-section", {
+      cache: 'force-cache',
+      next: { revalidate: 600 } // Revalidate every 10 minutes
+    })
       .then(r => r.json())
       .then(d => setHeaderInfo(d?.data || null))
       .catch(() => {});
@@ -70,10 +73,22 @@ export default function Navbar() {
     }
 
     const t = setTimeout(async () => {
-      const res = await fetch(`/api/store/products?search=${query}&limit=6`);
-      const d = await res.json();
-      setSuggestions(d.products || []);
-      setShowSuggestions(true);
+      try {
+        const res = await fetch(`/api/store/products?search=${encodeURIComponent(query)}&limit=6`, {
+          cache: 'no-store', // Search should be fresh
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        if (res.ok) {
+          const d = await res.json();
+          setSuggestions(d.products || []);
+          setShowSuggestions(true);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+        setSuggestions([]);
+      }
     }, 300);
 
     return () => clearTimeout(t);
@@ -195,12 +210,29 @@ export default function Navbar() {
 
           {/* Account */}
           {user ? (
-            <Link href="/user-dashboard" className="flex items-center gap-1 hover:text-indigo-600">
-              <FaUser /> {user.name?.split(" ")[0]}
+            <Link href="/user-dashboard" className="flex items-center gap-2 hover:text-indigo-600">
+              {user.profilePic ? (
+                <div className="relative">
+                  <Image
+                    src={user.profilePic}
+                    alt={user.name || "User"}
+                    width={32}
+                    height={32}
+                    className="rounded-full object-cover border-2 border-indigo-500"
+                  />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                  <FaUser className="text-indigo-600 text-sm" />
+                </div>
+              )}
+              <span className="hidden sm:inline text-sm font-medium">
+                {user.name?.split(" ")[0] || "User"}
+              </span>
             </Link>
           ) : (
             <Link href="/login" className="flex items-center gap-1 hover:text-indigo-600">
-              <FaUser /> Login
+              <FaUser /> <span className="hidden sm:inline">Login</span>
             </Link>
           )}
 
@@ -233,7 +265,24 @@ export default function Navbar() {
           <hr />
           <Link href="/cart">Cart ({cartCount})</Link>
           <Link href="/user-dashboard/wishlist">Wishlist ({wishCount})</Link>
-          {user ? <Link href="/user-dashboard">Account</Link> : <Link href="/login">Login</Link>}
+          {user ? (
+            <Link href="/user-dashboard" className="flex items-center gap-2">
+              {user.profilePic ? (
+                <Image
+                  src={user.profilePic}
+                  alt={user.name || "User"}
+                  width={24}
+                  height={24}
+                  className="rounded-full object-cover"
+                />
+              ) : (
+                <FaUser />
+              )}
+              <span>Account ({user.name?.split(" ")[0] || "User"})</span>
+            </Link>
+          ) : (
+            <Link href="/login">Login</Link>
+          )}
         </nav>
       )}
     </header>

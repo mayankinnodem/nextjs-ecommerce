@@ -1,21 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ViewUserPage({ params }) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = use(params);
 
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const res = await fetch(`/api/user/${id}`);
-      const data = await res.json();
-      if (!data.error) setUser(data);
+      try {
+        const res = await fetch(`/api/user/get-profile?id=${id}`);
+        const data = await res.json();
+        if (data.success && data.user) {
+          setUser(data.user);
+        } else {
+          console.error("Failed to fetch user:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
     };
-    fetchUser();
+    if (id) fetchUser();
   }, [id]);
 
   if (!user) return <p>Loading...</p>;
@@ -26,9 +34,9 @@ export default function ViewUserPage({ params }) {
 
       {/* USER IMAGE */}
       <div className="mb-6">
-        {user.profilePic?.url ? (
+        {user.profilePic ? (
           <img
-            src={user.profilePic.url}
+            src={user.profilePic}
             alt="Profile Image"
             className="w-40 h-40 object-cover rounded-lg border"
           />

@@ -13,7 +13,8 @@ cloudinary.config({
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    const category = await Category.findById(params.id);
+    const { id } = await params;
+    const category = await Category.findById(id);
 
     if (!category) {
       return NextResponse.json({ success: false, error: "Category not found" }, { status: 404 });
@@ -30,6 +31,7 @@ export async function PUT(req, { params }) {
   try {
     await connectDB();
 
+    const { id } = await params;
     const formData = await req.formData();
     const updateData = JSON.parse(formData.get("data"));
 
@@ -52,7 +54,7 @@ export async function PUT(req, { params }) {
     }
 
     const updatedCategory = await Category.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true }
     );
@@ -71,7 +73,8 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     await connectDB();
-    const deleted = await Category.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const deleted = await Category.findByIdAndDelete(id);
 
     if (!deleted) {
       return NextResponse.json({ success: false, error: "Category not found" }, { status: 404 });

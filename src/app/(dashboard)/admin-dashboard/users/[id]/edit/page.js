@@ -1,37 +1,56 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 
 export default function EditUserPage({ params }) {
-  const { id } = params;
+  const { id } = use(params);
   const router = useRouter();
   const [form, setForm] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch(`/api/user/${id}`);
-      const data = await res.json();
-      if (!data.error) setForm(data);
+      try {
+        const res = await fetch(`/api/user/get-profile?id=${id}`);
+        const data = await res.json();
+        if (data.success && data.user) {
+          setForm(data.user);
+        } else {
+          console.error("Failed to fetch user:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
     };
-    fetchData();
+    if (id) fetchData();
   }, [id]);
 
   if (!form) return <p>Loading...</p>;
 
   const handleSave = async () => {
-    const res = await fetch(`/api/user/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    try {
+      const formData = new FormData();
+      for (const key in form) {
+        if (form[key] !== null && form[key] !== undefined) {
+          formData.append(key, form[key]);
+        }
+      }
 
-    const data = await res.json();
-    if (data.success) {
-      alert("User updated!");
-      router.push(`/admin-dashboard/users/${id}/view`);
-    } else {
-      alert("Error updating");
+      const res = await fetch("/api/user/update-profile", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("User updated!");
+        router.push(`/admin-dashboard/users/${id}/view`);
+      } else {
+        alert(data.message || "Error updating");
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      alert("Error updating user");
     }
   };
 
@@ -41,9 +60,9 @@ export default function EditUserPage({ params }) {
 
       {/* PROFILE IMAGE PREVIEW */}
       <div className="mb-6">
-        {form.profilePic?.url ? (
+        {form.profilePic ? (
           <img
-            src={form.profilePic.url}
+            src={form.profilePic}
             alt="Profile"
             className="w-40 h-40 object-cover rounded-lg border"
           />

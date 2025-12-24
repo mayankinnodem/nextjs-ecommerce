@@ -38,7 +38,8 @@ export async function GET(req, { params }) {
   try {
     await connectDB();
 
-    const product = await Product.findById(params.id);
+    const { id } = await params;
+    const product = await Product.findById(id);
 
     if (!product)
       return NextResponse.json(
@@ -78,8 +79,10 @@ export async function PUT(req, { params }) {
       productData.tags = productData.tags.split(",").map((t) => t.trim());
     }
 
+    const { id } = await params;
+    
     // ✅ Fetch existing
-    const existingProduct = await Product.findById(params.id);
+    const existingProduct = await Product.findById(id);
 
     if (!existingProduct)
       return NextResponse.json(
@@ -124,7 +127,7 @@ export async function PUT(req, { params }) {
     ];
 
     // ✅ Update and return
-    const updated = await Product.findByIdAndUpdate(params.id, productData, {
+    const updated = await Product.findByIdAndUpdate(id, productData, {
       new: true,
     });
 
@@ -142,7 +145,8 @@ export async function DELETE(req, { params }) {
   try {
     await connectDB();
 
-    const existingProduct = await Product.findById(params.id);
+    const { id } = await params;
+    const existingProduct = await Product.findById(id);
     if (!existingProduct)
       return NextResponse.json(
         { success: false, error: "Product not found" },
@@ -154,7 +158,7 @@ export async function DELETE(req, { params }) {
       if (img.public_id) await cloudinary.uploader.destroy(img.public_id);
     }
 
-    await Product.findByIdAndDelete(params.id);
+    await Product.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err) {

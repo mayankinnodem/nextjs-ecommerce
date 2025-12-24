@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Category from "@/models/Category";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
+import { jsonResponse, handleOptions } from "@/lib/apiHelpers";
 
 // Cloudinary config
 cloudinary.config({
@@ -10,13 +11,28 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Handle CORS preflight
+export async function OPTIONS() {
+  return handleOptions();
+}
+
 // 🟢 GET -> All categories
 export async function GET() {
   try {
     await connectDB();
-    const categories = await Category.find().sort({ createdAt: -1 });
-    return NextResponse.json({ success: true, categories });
+    const categories = await Category.find()
+      .select("name slug image description")
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    return jsonResponse(
+      { success: true, categories },
+      200,
+      {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    );
   } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return jsonResponse({ success: false, error: err.message }, 500);
   }
 }

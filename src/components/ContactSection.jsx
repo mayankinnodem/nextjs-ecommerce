@@ -10,7 +10,8 @@ const ContactSection = () => {
   const fetchContactData = async () => {
     try {
       const res = await fetch("/api/store/contact-section", {
-        cache: "no-store",
+        cache: 'force-cache', // Cache to reduce server load
+        next: { revalidate: 600 }, // Revalidate every 10 minutes
       });
 
       if (!res.ok) {

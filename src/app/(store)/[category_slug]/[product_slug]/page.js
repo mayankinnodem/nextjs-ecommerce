@@ -3,17 +3,29 @@ import ProductActions from "./ProductActions";
 import SuggestedProducts from "@/components/shop/SuggestedProducts";
 
 async function getProduct(category_slug, product_slug) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    process.env.NEXTAUTH_URL ||
-    "http://localhost:3000";
+  // Use absolute URL for server-side fetch
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/store/products/${category_slug}/${product_slug}`,
+      { 
+        cache: "no-store",
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
 
-  const res = await fetch(
-    `${baseUrl}/api/store/products/${category_slug}/${product_slug}`,
-    { cache: "no-store" }
-  );
+    if (!res.ok) {
+      return { success: false, message: "Product not found" };
+    }
 
-  return res.json();
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return { success: false, message: "Failed to fetch product" };
+  }
 }
 
 export default async function ProductPage({ params }) {

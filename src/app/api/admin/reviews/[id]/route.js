@@ -16,7 +16,8 @@ cloudinary.config({
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    const review = await Review.findById(params.id);
+    const { id } = await params;
+    const review = await Review.findById(id);
 
     if (!review) {
       return NextResponse.json(
@@ -38,7 +39,7 @@ export async function PUT(req, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
     const formData = await req.formData();
     const rawData = formData.get("data");
 
@@ -97,7 +98,8 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     await connectDB();
-    const deleted = await Review.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const deleted = await Review.findByIdAndDelete(id);
 
     if (!deleted) {
       return NextResponse.json(

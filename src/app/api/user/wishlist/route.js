@@ -19,10 +19,12 @@ export async function GET(req) {
       );
     }
 
+    // Optimize: Select only needed fields to reduce data transfer (mobile app optimization)
     const items = await Wishlist.find({ userId })
       .populate({
         path: "productId",
         model: Product,
+        select: "name slug price salePrice discount images stock category brand", // Only essential fields
         populate: {
           path: "category",
           select: "slug name",  // ⭐ slug मिल जाएगा

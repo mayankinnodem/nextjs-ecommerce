@@ -4,64 +4,50 @@ import React, { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 
 export default function Flags() {
-  const [allProducts, setAllProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [trending, setTrending] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ✅ Fetch categories */
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch("/api/store/categories");
-        const data = await res.json();
-        if (data.success) setCategories(data.categories);
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
-      }
-    };
-
-    fetchCategories();
-  }, []);
-
-  /* ✅ Fetch Products */
+  /* ✅ Optimized: Single API call for all flag products */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/store/products");
-        const data = await res.json();
+        // Single API call to get all flag products at once (reduces server load)
+        const res = await fetch("/api/store/products?limit=24", {
+          cache: 'force-cache', // Cache for better performance
+          next: { revalidate: 300 } // Revalidate every 5 minutes
+        });
 
-        if (data.success) {
-          const updatedProducts = data.products.map((p) => {
-            const cat =
-              categories.find(
-                (c) => c._id === p.category || c._id === p?.category?._id
-              ) || {};
-
-            return {
-              ...p,
-              categorySlug: cat?.slug ?? "unknown",
-              productSlug: p?.slug ?? "product",
-              categoryName: cat?.name ?? "",
-            };
-          });
-
-          setAllProducts(updatedProducts);
-          setTrending(updatedProducts.filter((p) => p.isTrending));
-          setFeatured(updatedProducts.filter((p) => p.isFeatured));
-          setNewArrivals(updatedProducts.filter((p) => p.isNewArrival));
+        if (!res.ok) {
+          throw new Error("Failed to fetch products");
         }
+
+        const data = await res.json();
+        const allProducts = data?.products || [];
+
+        // Separate products by flags (client-side filtering - faster)
+        const trendingProducts = allProducts.filter(p => p.isTrending).slice(0, 8);
+        const featuredProducts = allProducts.filter(p => p.isFeatured).slice(0, 8);
+        const newArrivalProducts = allProducts.filter(p => p.isNewArrival).slice(0, 8);
+
+        // Use flag-specific products or fallback to general products
+        setTrending(trendingProducts.length > 0 ? trendingProducts : allProducts.slice(0, 8));
+        setFeatured(featuredProducts.length > 0 ? featuredProducts : allProducts.slice(8, 16));
+        setNewArrivals(newArrivalProducts.length > 0 ? newArrivalProducts : allProducts.slice(16, 24));
       } catch (err) {
         console.error("Failed to fetch products for flags:", err);
+        // Set empty arrays on error
+        setTrending([]);
+        setFeatured([]);
+        setNewArrivals([]);
       } finally {
         setLoading(false);
       }
     };
 
-    if (categories.length) fetchProducts();
-  }, [categories]);
+    fetchProducts();
+  }, []);
 
   const renderFlagSection = (title, products) => (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

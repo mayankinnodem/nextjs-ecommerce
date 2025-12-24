@@ -3,6 +3,12 @@ import Product from "@/models/Product";
 import Category from "@/models/Category";
 import Brand from "@/models/Brand";
 import { NextResponse } from "next/server";
+import { jsonResponse, handleOptions } from "@/lib/apiHelpers";
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return handleOptions();
+}
 
 export async function GET(req, context) {
   try {
@@ -43,12 +49,18 @@ export async function GET(req, context) {
       );
     }
 
-    return NextResponse.json({ success: true, product }, { status: 200 });
+    return jsonResponse(
+      { success: true, product }, 
+      200,
+      {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    );
   } catch (error) {
     console.error("Product GET API error:", error);
-    return NextResponse.json(
+    return jsonResponse(
       { success: false, message: error.message },
-      { status: 500 }
+      500
     );
   }
 }

@@ -10,16 +10,55 @@ export default function Footer() {
   useEffect(() => {
     const fetchContact = async () => {
       try {
-        const res = await fetch("/api/store/contact-section", { cache: "no-store" });
+        const res = await fetch("/api/store/contact-section", { 
+          cache: 'force-cache', // Cache to reduce server load
+          next: { revalidate: 600 }, // Revalidate every 10 minutes (contact info doesn't change often)
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
 
-        if (!res.ok) throw new Error("API failed");
+        if (!res.ok) {
+          // Use default data if API fails
+          setContact({
+            title: "E-Commerce Store",
+            description: "Your trusted shopping destination",
+            address: "",
+            phone: "",
+            email: "",
+            logo: { url: "" },
+            socialLinks: []
+          });
+          return;
+        }
 
         const json = await res.json();
         if (json.success && json.data) {
           setContact(json.data);
+        } else {
+          // Fallback to default data
+          setContact({
+            title: "E-Commerce Store",
+            description: "Your trusted shopping destination",
+            address: "",
+            phone: "",
+            email: "",
+            logo: { url: "" },
+            socialLinks: []
+          });
         }
       } catch (err) {
         console.error("Footer fetch error:", err.message);
+        // Set default data on error so footer still renders
+        setContact({
+          title: "E-Commerce Store",
+          description: "Your trusted shopping destination",
+          address: "",
+          phone: "",
+          email: "",
+          logo: { url: "" },
+          socialLinks: []
+        });
       } finally {
         setLoading(false);
       }

@@ -8,6 +8,8 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", href: "/admin-dashboard" },
+  { name: "Notifications", href: "/admin-dashboard/notifications" },
+  { name: "Send Notification", href: "/admin-dashboard/send-notification" },
   {
     name: "Products",
     href: "/admin-dashboard/products",

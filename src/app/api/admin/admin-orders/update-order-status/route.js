@@ -1,6 +1,8 @@
 import { connectDB } from "@/lib/dbConnect";
 import Order from "@/models/Order";
 import { NextResponse } from "next/server";
+import { notifyUser } from "@/lib/notificationHelper";
+import User from "@/models/User";
 
 export async function PUT(req) {
   try {
@@ -55,6 +57,30 @@ export async function PUT(req) {
     }
 
     await order.save();
+
+    // ✅ Auto notification to user when status changes
+    const user = await User.findById(order.userId);
+    if (user) {
+      let message = `Your order #${orderId} status has been updated to: ${status}`;
+      if (status === "Shipped") {
+        message = `Your order #${orderId} has been shipped! Expected delivery: ${order.expectedDelivery?.toLocaleDateString()}`;
+      } else if (status === "Completed") {
+        message = `Your order #${orderId} has been delivered successfully!`;
+      } else if (status === "Cancelled by Admin") {
+        message = `Your order #${orderId} has been cancelled. Reason: ${cancelReason || "Not provided"}`;
+      }
+
+      await notifyUser({
+        userId: user._id,
+        title: "Order Status Updated",
+        message,
+        type: "order",
+        priority: status.includes("Cancelled") ? "high" : "medium",
+        relatedId: orderId,
+        relatedType: "order",
+        actionUrl: `/user-dashboard/orders`,
+      });
+    }
 
     return NextResponse.json({ success: true, message: "Order updated successfully" });
   } catch (error) {

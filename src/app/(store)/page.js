@@ -1,6 +1,6 @@
 import ContactSection from "@/components/ContactSection";
 import Sections from "@/components/Sections";
-import Products from "./shop/page";
+import ProductsList from "@/components/ProductsList";
 import Category from "./all-categories/page";
 import Flags from "@/components/shop/Flags";
 import AboutSection from "@/components/AboutSection";
@@ -12,7 +12,7 @@ export default function Home() {
     <div>
       <Sections section="landingpage-frontsection"/>
       <Category/>
-      <Products/>
+      <ProductsList limit={8} title="Featured Products" />
       <Flags/>
       <AboutSection/>
       <Reviews/>

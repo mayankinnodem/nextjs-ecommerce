@@ -3,12 +3,18 @@ import Product from "@/models/Product";
 import Brand from "@/models/Brand";
 import Category from "@/models/Category";
 import { NextResponse } from "next/server";
+import { jsonResponse, handleOptions } from "@/lib/apiHelpers";
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return handleOptions();
+}
 
 export async function GET(req, { params }) {
   try {
     await connectDB();
 
-    const { product_id } = params;
+    const { product_id } = await params;
 
     if (!product_id) {
       return NextResponse.json(
@@ -29,15 +35,18 @@ export async function GET(req, { params }) {
       );
     }
 
-    return NextResponse.json(
+    return jsonResponse(
       { success: true, product },
-      { status: 200 }
+      200,
+      {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
     );
   } catch (error) {
     console.error("Product GET API error:", error);
-    return NextResponse.json(
+    return jsonResponse(
       { success: false, message: "Internal Server Error" },
-      { status: 500 }
+      500
     );
   }
 }

@@ -4,6 +4,12 @@ import Product from "@/models/Product";
 import Brand from "@/models/Brand"; // ✅ REQUIRED FOR populate
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
+import { jsonResponse, handleOptions } from "@/lib/apiHelpers";
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return handleOptions();
+}
 
 export async function GET(req, { params }) {
   try {
@@ -35,23 +41,41 @@ export async function GET(req, { params }) {
       );
     }
 
+    // Get pagination params
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const skip = (page - 1) * limit;
+
+    // Get total count
+    const total = await Product.countDocuments({ category: category._id });
+
+    // Fetch products with pagination, lean, and field selection
     const products = await Product.find({ category: category._id })
+      .select("name slug price salePrice discount images stock isTrending isFeatured isNewArrival category brand createdAt")
       .populate("category", "name slug")
-      .populate("brand", "name slug") // ✅ now works
+      .populate("brand", "name slug")
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    return NextResponse.json({
+    return jsonResponse({
       success: true,
-      total: products.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
       products,
+    }, 200, {
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120'
     });
   } catch (error) {
     console.error("❌ Category Products API Error:", error);
 
-    return NextResponse.json(
+    return jsonResponse(
       { success: false, message: "Internal Server Error" },
-      { status: 500 }
+      500
     );
   }
 }

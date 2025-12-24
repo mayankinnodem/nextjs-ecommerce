@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Product from "@/models/Product";
+import Brand from "@/models/Brand";
+import Category from "@/models/Category";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
 
@@ -23,18 +25,69 @@ async function uploadToCloudinary(fileBuffer, folder = "products") {
   });
 }
 
-export async function GET() {
+export async function GET(req) {
   try {
     await connectDB();
-    const products = await Product.find().sort({ createdAt: -1 });
+    
+    // Get pagination params
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    // Limit max to 100 to prevent excessive data transfer
+    const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
+    const skip = (page - 1) * limit;
+    const search = searchParams.get("search") || "";
 
-    const LOW_STOCK_LIMIT = 5; // या env var से लो
-    const lowStock = products.filter((p) => (p.stock ?? 0) < LOW_STOCK_LIMIT).length;
-    const lowStockProducts = products.filter((p) => (p.stock ?? 0) < LOW_STOCK_LIMIT);
+    // Build query
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // Get total count
+    const total = await Product.countDocuments(query);
+
+    // Fetch products with pagination, lean, and field selection (reduces data transfer)
+    const products = await Product.find(query)
+      .select("name slug price salePrice discount images stock isTrending isFeatured isNewArrival category brand createdAt description")
+      .populate("category", "name slug")
+      .populate("brand", "name slug")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Calculate low stock only if needed (optimize DB queries)
+    const includeLowStock = searchParams.get("includeLowStock") === "true";
+    let lowStock = 0;
+    if (includeLowStock) {
+      const LOW_STOCK_LIMIT = 5;
+      lowStock = await Product.countDocuments({
+        $or: [
+          { stock: { $lt: LOW_STOCK_LIMIT } },
+          { stock: { $exists: false } }
+        ]
+      });
+    }
 
     return NextResponse.json(
-      { success: true, products, total: products.length, lowStock, lowStockProducts },
-      { status: 200 }
+      { 
+        success: true, 
+        products, 
+        total, 
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        ...(includeLowStock && { lowStock })
+      },
+      { 
+        status: 200,
+        headers: {
+          'Cache-Control': 'private, no-cache, no-store, must-revalidate' // Admin data should not be cached
+        }
+      }
     );
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

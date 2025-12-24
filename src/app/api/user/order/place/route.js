@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/dbConnect";
 import Order from "@/models/Order";
 import User from "@/models/User";
+import { notifyAdmin } from "@/lib/notificationHelper";
+import { notifyUser } from "@/lib/notificationHelper";
 
 export async function POST(req) {
   try {
@@ -56,6 +58,29 @@ export async function POST(req) {
       paymentStatus: paymentMode === "Online" ? "Paid" : "Pending",
       status: "Pending",
       expectedDelivery,
+    });
+
+    // ✅ Auto notification to admin
+    await notifyAdmin({
+      title: "New Order Received",
+      message: `New order #${order._id} placed by ${user.name || user.phone}. Total: ₹${finalTotal}`,
+      type: "order",
+      priority: "high",
+      relatedId: order._id,
+      relatedType: "order",
+      actionUrl: `/admin-dashboard/orders/${order._id}`,
+    });
+
+    // ✅ Auto notification to user
+    await notifyUser({
+      userId: user._id,
+      title: "Order Placed Successfully",
+      message: `Your order #${order._id} has been placed successfully. Total: ₹${finalTotal}`,
+      type: "order",
+      priority: "medium",
+      relatedId: order._id,
+      relatedType: "order",
+      actionUrl: `/user-dashboard/orders`,
     });
 
     return NextResponse.json({ success: true, order });

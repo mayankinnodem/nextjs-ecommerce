@@ -1,14 +1,10 @@
 import ProductCard from "@/components/shop/ProductCard";
 
 export default async function CategoryPage({ params }) {
-  const { category_slug } = params;
+  const { category_slug } = await params;
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    process.env.NEXTAUTH_URL ||
-    "http://localhost:3000";
-
-  // ⭐ Correct URL (dynamic slug)
+  // Use relative URL for server-side fetch in Next.js
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   const res = await fetch(
     `${baseUrl}/api/store/products/${category_slug}`,
     { cache: "no-store" }

@@ -24,7 +24,8 @@ const generateSlug = (text) =>
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    const brand = await Brand.findById(params.id);
+    const { id } = await params;
+    const brand = await Brand.findById(id);
     if (!brand) {
       return NextResponse.json(
         { success: false, error: "Brand not found" },
@@ -45,6 +46,7 @@ export async function PUT(req, { params }) {
   try {
     await connectDB();
 
+    const { id } = await params;
     const formData = await req.formData();
     const updateData = JSON.parse(formData.get("data"));
 
@@ -71,7 +73,7 @@ export async function PUT(req, { params }) {
     }
 
     const updatedBrand = await Brand.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true }
     );
@@ -96,7 +98,8 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     await connectDB();
-    const deleted = await Brand.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const deleted = await Brand.findByIdAndDelete(id);
 
     if (!deleted) {
       return NextResponse.json(

@@ -8,16 +8,36 @@ export async function GET(req) {
 
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get("userId");
+  const page = parseInt(searchParams.get("page") || "1");
+  // Limit max to 50 to prevent excessive data transfer
+  const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
+  const skip = (page - 1) * limit;
 
   if (!userId) {
     return NextResponse.json({ success: false, message: "UserId missing" });
   }
 
   try {
-    // ✅ Populate product details inside items
-    const orders = await Order.find({ userId }).populate("items.productId");
+    // Get total count
+    const total = await Order.countDocuments({ userId });
 
-    return NextResponse.json({ success: true, orders });
+    // ✅ Populate product details inside items with pagination, lean, and field selection
+    const orders = await Order.find({ userId })
+      .select("items address totalAmount paymentMode paymentStatus status expectedDelivery createdAt")
+      .populate("items.productId", "name images price slug") // Added slug for mobile app navigation
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    return NextResponse.json({ 
+      success: true, 
+      orders,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
   } catch (error) {
     return NextResponse.json({ success: false, message: error.message });
   }
