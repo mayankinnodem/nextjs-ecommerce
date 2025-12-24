@@ -110,7 +110,8 @@ export async function POST(req) {
         country: user.country || "",
         occupation: user.occupation || "",
         company: user.company || "",
-        profilePic: user.profilePic || null,
+        profilePic: data.user.profilePic?.url || "",
+        // profilePic: user.profilePic || null,
       },
     });
 

@@ -12,23 +12,25 @@ const AboutSection = () => {
     process.env.NEXTAUTH_URL ||
     "http://localhost:3000";
 
-  useEffect(() => {
-    async function fetchAbout() {
-      try {
-        const res = await fetch(`${baseUrl}/api/store/about`, {
-          cache: "no-store",
-        });
-        const data = await res.json();
-        setAbout(data?.about);
-      } catch (error) {
-        console.log("Error fetching about:", error);
-      } finally {
-        setLoading(false);
-      }
+useEffect(() => {
+  async function fetchAbout() {
+    try {
+      const res = await fetch("/api/store/about", {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      setAbout(data?.about);
+    } catch (error) {
+      console.log("Error fetching about:", error);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    fetchAbout();
-  }, []);
+  fetchAbout();
+}, []);
+
+
 
   if (loading) return <p>Loading...</p>;
   if (!about) return <p>No data found!</p>;
@@ -79,7 +81,6 @@ const AboutSection = () => {
               fill
               className="rounded-xl shadow-xl object-cover"
             />
-            <div className="absolute inset-0 rounded-xl bg-black/10 backdrop-blur-[1px]" />
           </motion.div>
         )}
       </div>
