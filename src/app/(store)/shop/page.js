@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProductCard from "@/components/shop/ProductCard";
 
-export default function ShopPage() {
+function ShopContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -187,5 +187,21 @@ export default function ShopPage() {
       )}
 
     </section>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={
+      <section className="max-w-7xl mx-auto px-4 py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-72 bg-gray-200 animate-pulse rounded-xl" />
+          ))}
+        </div>
+      </section>
+    }>
+      <ShopContent />
+    </Suspense>
   );
 }
