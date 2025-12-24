@@ -57,7 +57,6 @@ export default function Reviews() {
         >
           ›
         </button>
-
         {/* Scroll Area */}
         <div
           ref={scrollRef}
