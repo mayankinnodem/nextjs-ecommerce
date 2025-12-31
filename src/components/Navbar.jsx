@@ -115,7 +115,7 @@ export default function Navbar() {
   return (
     <header
       ref={containerRef}
-      className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b"
+      className="sticky shadow-sm top-0 z-50 backdrop-blur-md bg-white/80"
     >
       {/* ========== TOP CONTACT BAR ========== */}
       <div className="bg-gray-900 text-gray-200 text-xs sm:text-sm py-2 px-4 flex justify-between items-center">
@@ -161,7 +161,7 @@ export default function Navbar() {
         {/* DESKTOP SEARCH */}
         <div className="hidden md:flex relative w-1/2">
           <input
-            className="w-full border bg-white px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full shadow-sm bg-gray-100 px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="Search products..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
