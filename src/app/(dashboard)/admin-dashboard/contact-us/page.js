@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 export default function ContactUsAdminPage() {
   const [form, setForm] = useState({
+    companyName: "",
     title: "",
     description: "",
     phone: "",
@@ -138,17 +139,27 @@ export default function ContactUsAdminPage() {
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* BASIC INFO */}
         <div className="grid md:grid-cols-2 gap-4">
-          {["title", "phone", "email", "address"].map((field) => (
-            <input
-              key={field}
-              name={field}
-              value={form[field]}
-              onChange={handleChange}
-              placeholder={field}
-              className="p-2 border rounded"
-            />
-          ))}
-        </div>
+  {/* ✅ COMPANY NAME */}
+  <input
+    name="companyName"
+    value={form.companyName}
+    onChange={handleChange}
+    placeholder="Company Name"
+    className="p-2 border rounded"
+  />
+
+  {["title", "phone", "email", "address"].map((field) => (
+    <input
+      key={field}
+      name={field}
+      value={form[field]}
+      onChange={handleChange}
+      placeholder={field}
+      className="p-2 border rounded"
+    />
+  ))}
+</div>
+
 
         <textarea
           name="description"
@@ -157,6 +168,7 @@ export default function ContactUsAdminPage() {
           placeholder="Description"
           className="w-full p-2 border rounded"
         />
+        
 
         {/* ✅ LOGO + PREVIEW */}
         <div>

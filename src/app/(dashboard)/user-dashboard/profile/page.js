@@ -17,6 +17,9 @@ export default function ProfilePage() {
   const [countries] = useState(countriesData);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [deleteReason, setDeleteReason] = useState("");
+
 
   const [editMode, setEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
@@ -42,6 +45,7 @@ export default function ProfilePage() {
     company: "",
     profilePic: "",
   });
+
 
   // Load states when country changes
   useEffect(() => {
@@ -69,6 +73,50 @@ export default function ProfilePage() {
 
     fetchProfile(userData._id);
   }, []);
+
+const handleDeleteAccount = async () => {
+  if (!deleteReason) {
+    alert("Please select a reason");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const res = await fetch("/api/user/delete-account", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        reason: deleteReason,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      localStorage.clear();
+      sessionStorage.clear();
+
+      alert(
+        "Your account deletion request has been submitted. Your account will be permanently deleted within 7 days."
+      );
+
+      window.location.href = "/login";
+    } else {
+      alert(data.message || "Failed to submit delete request");
+    }
+  } catch {
+    alert("Server error");
+  } finally {
+    setLoading(false);
+    setShowDeleteModal(false);
+  }
+};
+
+
 
   // Fetch profile
   const fetchProfile = async (userId) => {
@@ -298,6 +346,76 @@ const handleSave = async () => {
             )}
           </div>
         )}
+
+        {/* Delete Account */}
+<div className="mt-10 border-t pt-6">
+
+  <button
+    onClick={() => setShowDeleteModal(true)}
+    disabled={loading}
+    className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition disabled:opacity-60"
+  >
+    Delete Account Permanently
+  </button>
+</div>
+
+{showDeleteModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+      <h3 className="text-xl font-bold text-red-600 mb-2">
+        Request Account Deletion
+      </h3>
+
+      <p className="text-sm text-gray-600 mb-4">
+        Your account will be scheduled for deletion and permanently removed
+        within <b>7 days</b>. You will not be able to login during this period.
+      </p>
+
+      <label className="block text-sm font-semibold mb-1">
+        Reason for deleting account
+      </label>
+
+      <select
+        value={deleteReason}
+        onChange={(e) => setDeleteReason(e.target.value)}
+        className="w-full border rounded-lg px-3 py-2 mb-3"
+      >
+        <option value="">Select a reason</option>
+        <option value="privacy">Privacy concerns</option>
+        <option value="not_useful">App not useful</option>
+        <option value="duplicate">Created duplicate account</option>
+        <option value="other">Other</option>
+      </select>
+
+      {deleteReason === "other" && (
+        <textarea
+          placeholder="Please specify your reason"
+          className="w-full border rounded-lg px-3 py-2 mb-3"
+          onChange={(e) => setDeleteReason(e.target.value)}
+        />
+      )}
+
+      <div className="flex justify-end gap-3 mt-4">
+        <button
+          onClick={() => setShowDeleteModal(false)}
+          className="px-4 py-2 rounded-lg bg-gray-200"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleDeleteAccount}
+          disabled={!deleteReason || loading}
+          className="px-4 py-2 rounded-lg bg-red-600 text-white disabled:opacity-50"
+        >
+          Confirm Delete
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
 
         {/* Alert */}
         {message && (

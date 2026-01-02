@@ -29,6 +29,10 @@ const ContactSectionSchema = new mongoose.Schema(
     title: { type: String, required: true },
     subtitle: { type: String, default: "" },
     description: { type: String, default: "" },
+    companyName: {
+  type: String,
+  trim: true,
+},
 
     address: { type: String, default: "" },
     phone: { type: String, default: "" },
