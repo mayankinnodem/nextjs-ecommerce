@@ -47,8 +47,8 @@ export async function POST(req) {
 
     res.cookies.set("adminToken", token, {
       httpOnly: true,
-      secure: false, // local dev
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production", // Secure in production
+      sameSite: "strict", // Stricter same-site policy
       maxAge: 7 * 24 * 60 * 60,
       path: "/",
     });

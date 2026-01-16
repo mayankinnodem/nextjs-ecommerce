@@ -4,6 +4,7 @@ import Brand from "@/models/Brand";
 import Category from "@/models/Category";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
+import { sanitizeSearchQuery, sanitizeInput, validateBodySize } from "@/lib/apiHelpers";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -31,18 +32,27 @@ export async function GET(req) {
     
     // Get pagination params
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     // Limit max to 100 to prevent excessive data transfer
-    const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") || "50")), 100);
     const skip = (page - 1) * limit;
-    const search = searchParams.get("search") || "";
+    
+    // Sanitize search input to prevent ReDoS attacks
+    const rawSearch = searchParams.get("search") || "";
+    const search = sanitizeSearchQuery(rawSearch, 50);
 
     // Build query
     const query = {};
-    if (search) {
+    // Only use regex if search is meaningful (length > 2) to prevent CPU spikes
+    if (search && search.length > 2) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } }
+      ];
+    } else if (search && search.length <= 2) {
+      // For very short searches, use prefix match (more efficient)
+      query.$or = [
+        { name: { $regex: `^${search}`, $options: "i" } }
       ];
     }
 
@@ -102,8 +112,35 @@ export async function POST(req) {
 
     const formData = await req.formData();
 
+    // Validate body size
+    const dataString = formData.get("data");
+    if (!dataString || typeof dataString !== 'string') {
+      return NextResponse.json(
+        { success: false, error: "Invalid request data" },
+        { status: 400 }
+      );
+    }
+
+    // Limit JSON size to prevent large payload attacks
+    if (dataString.length > 10000) { // 10KB limit for product data
+      return NextResponse.json(
+        { success: false, error: "Request data too large" },
+        { status: 413 }
+      );
+    }
+
     // Parse product JSON
-    const productData = JSON.parse(formData.get("data")); // "data" is JSON string
+    const productData = JSON.parse(dataString);
+    
+    // Validate body size
+    try {
+      validateBodySize(productData, 10000);
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 413 }
+      );
+    }
 
     // Upload images (max 5)
     const files = formData.getAll("images");

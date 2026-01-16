@@ -4,7 +4,7 @@ import Brand from "@/models/Brand";
 import Category from "@/models/Category";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
-import { jsonResponse, handleOptions, getCorsHeaders } from "@/lib/apiHelpers";
+import { jsonResponse, handleOptions, sanitizeSearchQuery, sanitizeNumber, sanitizeInput, validateBodySize } from "@/lib/apiHelpers";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -37,15 +37,20 @@ export async function GET(req) {
 
     // Get query parameters for pagination and filtering
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     // Limit max to 100 to prevent excessive data transfer (mobile app optimization)
-    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 100);
-    const search = searchParams.get("search") || "";
-    const category = searchParams.get("category") || "";
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") || "20")), 100);
+    
+    // Sanitize search input to prevent ReDoS attacks
+    const rawSearch = searchParams.get("search") || "";
+    const search = sanitizeSearchQuery(rawSearch, 50);
+    const category = sanitizeInput(searchParams.get("category") || "", 50);
     const priceRange = searchParams.get("priceRange") || "";
     const sort = searchParams.get("sort") || "default";
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
+    
+    // Sanitize price inputs
+    const minPrice = sanitizeNumber(searchParams.get("minPrice"), 0, 10000000);
+    const maxPrice = sanitizeNumber(searchParams.get("maxPrice"), 0, 10000000);
     const isTrending = searchParams.get("isTrending");
     const isFeatured = searchParams.get("isFeatured");
     const isNewArrival = searchParams.get("isNewArrival");
@@ -53,11 +58,19 @@ export async function GET(req) {
     // Build query
     const query = {};
     
-    if (search) {
+    // Only use regex if search is meaningful (length > 2) to prevent CPU spikes
+    if (search && search.length > 2) {
+      // Use text index if available, otherwise use regex with limit
       query.$or = [
         { name: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
         { tags: { $in: [new RegExp(search, "i")] } }
+      ];
+    } else if (search && search.length <= 2) {
+      // For very short searches, use exact match or prefix match (more efficient)
+      query.$or = [
+        { name: { $regex: `^${search}`, $options: "i" } },
+        { tags: { $in: [new RegExp(`^${search}`, "i")] } }
       ];
     }
 
@@ -79,10 +92,10 @@ export async function GET(req) {
       query.isNewArrival = true;
     }
 
-    if (minPrice || maxPrice) {
+    if (minPrice !== null || maxPrice !== null) {
       query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+      if (minPrice !== null) query.price.$gte = minPrice;
+      if (maxPrice !== null) query.price.$lte = maxPrice;
     } else if (priceRange && priceRange !== "all") {
       if (priceRange === "under5k") {
         query.price = { $lt: 5000 };
@@ -168,8 +181,35 @@ export async function POST(req) {
 
     const formData = await req.formData();
 
+    // Validate body size
+    const dataString = formData.get("data");
+    if (!dataString || typeof dataString !== 'string') {
+      return jsonResponse(
+        { success: false, error: "Invalid request data" },
+        400
+      );
+    }
+
+    // Limit JSON size to prevent large payload attacks
+    if (dataString.length > 10000) { // 10KB limit for product data
+      return jsonResponse(
+        { success: false, error: "Request data too large" },
+        413
+      );
+    }
+
     // Parse product JSON
-    const productData = JSON.parse(formData.get("data")); // "data" is JSON string
+    const productData = JSON.parse(dataString);
+    
+    // Validate body size
+    try {
+      validateBodySize(productData, 10000);
+    } catch (error) {
+      return jsonResponse(
+        { success: false, error: error.message },
+        413
+      );
+    }
 
     // Upload images (max 5)
     const files = formData.getAll("images");

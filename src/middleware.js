@@ -1,27 +1,129 @@
 import { NextResponse } from 'next/server';
+import { rateLimit, strictRateLimit, moderateRateLimit, looseRateLimit } from '@/lib/rateLimit';
 
-export function middleware(request) {
+// Allowed origins for CORS (security improvement)
+const getAllowedOrigin = (origin) => {
+  // In production, replace with your actual domains
+  const allowedOrigins = [
+    process.env.ALLOWED_ORIGIN,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    // Add your mobile app origins here
+  ].filter(Boolean);
+
+  // If no origin specified, allow for mobile apps (but restrict in production)
+  if (!origin) {
+    return process.env.NODE_ENV === 'production' ? null : '*';
+  }
+
+  // Check if origin is allowed
+  if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+    return origin;
+  }
+
+  // In production, be strict
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
+  // In development, allow localhost
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    return origin;
+  }
+
+  return null;
+};
+
+export async function middleware(request) {
+  const origin = request.headers.get('origin');
+  const allowedOrigin = getAllowedOrigin(origin);
+
   // Handle CORS for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Security headers
+    const securityHeaders = {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+    };
+
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
-      return new NextResponse(null, { 
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-          'Access-Control-Max-Age': '86400',
-        }
-      });
+      const headers = {
+        ...securityHeaders,
+        'Access-Control-Max-Age': '86400',
+      };
+
+      if (allowedOrigin) {
+        headers['Access-Control-Allow-Origin'] = allowedOrigin;
+        headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+        headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
+        headers['Access-Control-Allow-Credentials'] = 'true';
+      }
+
+      return new NextResponse(null, { status: 200, headers });
     }
 
-    // For other requests, add CORS headers to the response
+    // Rate limiting based on endpoint
+    const pathname = request.nextUrl.pathname;
+    let rateLimiter;
+
+    // Strict rate limiting for sensitive endpoints
+    if (
+      pathname.includes('/login') ||
+      pathname.includes('/send-otp') ||
+      pathname.includes('/verify-otp') ||
+      pathname.includes('/contact-form')
+    ) {
+      rateLimiter = strictRateLimit;
+    }
+    // Moderate rate limiting for admin endpoints
+    else if (pathname.includes('/admin/')) {
+      rateLimiter = moderateRateLimit;
+    }
+    // Loose rate limiting for public store endpoints
+    else {
+      rateLimiter = looseRateLimit;
+    }
+
+    const rateLimitResult = await rateLimiter(request);
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Too many requests. Please try again later.',
+          retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            ...securityHeaders,
+            'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
+            ...(allowedOrigin && { 'Access-Control-Allow-Origin': allowedOrigin }),
+          },
+        }
+      );
+    }
+
+    // For other requests, add CORS and security headers to the response
     const response = NextResponse.next();
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    response.headers.set('Access-Control-Max-Age', '86400');
+    
+    Object.entries(securityHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    if (allowedOrigin) {
+      response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+    }
+
+    // Add rate limit info to headers
+    response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
 
     return response;
   }

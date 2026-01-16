@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/dbConnect";
 import User from "@/models/User";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
+import { sanitizeInput } from "@/lib/apiHelpers";
 
 // 🔹 Cloudinary Config
 cloudinary.config({
@@ -22,20 +23,28 @@ export async function POST(req) {
 
     if (contentType.includes("multipart/form-data")) {
       const form = await req.formData();
-      phone = form.get("phone");
-      otp = form.get("otp");
+      phone = sanitizeInput(form.get("phone") || "", 15).replace(/\D/g, "");
+      otp = sanitizeInput(form.get("otp") || "", 10);
       profileFile = form.get("profilePic");
     } else {
       const body = await req.json();
-      phone = body.phone;
-      otp = body.otp;
+      phone = sanitizeInput(body?.phone || "", 15).replace(/\D/g, "");
+      otp = sanitizeInput(body?.otp || "", 10);
       profileFile = null; // No image
     }
 
     // Validate
-    if (!phone || !otp) {
+    if (!phone || !otp || phone.length !== 10 || otp.length !== 6) {
       return NextResponse.json(
-        { success: false, message: "Phone and OTP are required." },
+        { success: false, message: "Invalid phone number or OTP format." },
+        { status: 400 }
+      );
+    }
+    
+    // Validate file size if provided
+    if (profileFile && profileFile.size > 5 * 1024 * 1024) { // 5MB limit
+      return NextResponse.json(
+        { success: false, message: "Profile picture size must be less than 5MB." },
         { status: 400 }
       );
     }

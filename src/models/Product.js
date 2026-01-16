@@ -3,10 +3,10 @@ import mongoose from "mongoose";
 const ProductSchema = new mongoose.Schema(
   {
     // Basic Info
-    name: { type: String, required: true },
-    slug: { type: String, unique: true, required: true },
+    name: { type: String, required: true, index: true }, // Index for faster searches
+    slug: { type: String, unique: true, required: true, index: true },
     description: { type: String },
-    sku: { type: String },
+    sku: { type: String, index: true },
 
     // ✅ category → ObjectId
     category: {
@@ -31,7 +31,7 @@ const ProductSchema = new mongoose.Schema(
     },
 
     // Pricing
-    price: { type: Number, required: true },
+    price: { type: Number, required: true, index: true }, // Index for price filtering
     discount: { type: Number, default: 0 },
     salePrice: { type: Number },
 
@@ -59,9 +59,9 @@ const ProductSchema = new mongoose.Schema(
     tags: [{ type: String }],
 
     // Flags
-    isTrending: { type: Boolean, default: false },
-    isFeatured: { type: Boolean, default: false },
-    isNewArrival: { type: Boolean, default: false },
+    isTrending: { type: Boolean, default: false, index: true }, // Index for flag filtering
+    isFeatured: { type: Boolean, default: false, index: true },
+    isNewArrival: { type: Boolean, default: false, index: true },
     season: { type: String, default: "All" },
 
     // Status
@@ -75,6 +75,14 @@ const ProductSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Create compound indexes for common query patterns (optimizes CPU usage)
+ProductSchema.index({ category: 1, price: 1 }); // For category + price filtering
+ProductSchema.index({ isTrending: 1, createdAt: -1 }); // For trending products
+ProductSchema.index({ isFeatured: 1, createdAt: -1 }); // For featured products
+ProductSchema.index({ isNewArrival: 1, createdAt: -1 }); // For new arrivals
+ProductSchema.index({ name: 'text', description: 'text', tags: 'text' }); // Text search index (more efficient than regex)
+ProductSchema.index({ stock: 1 }); // For stock queries
 
 const Product =
   mongoose.models.Product || mongoose.model("Product", ProductSchema);

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import User from "@/models/User";
 import { connectDB } from "@/lib/dbConnect";
+import { sanitizeInput } from "@/lib/apiHelpers";
 
 const apiKey = "afd6c091-063e-11f0-8b17-0200cd936042";
 const otpTemplateName = "OTPtemplate";
@@ -10,7 +11,10 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const { phone } = await req.json();
+    const body = await req.json();
+    
+    // Validate and sanitize phone input
+    const phone = sanitizeInput(body?.phone || "", 15).replace(/\D/g, ""); // Remove non-digits
 
     // ✅ Validate phone number
     if (!phone || !/^\d{10}$/.test(phone)) {
