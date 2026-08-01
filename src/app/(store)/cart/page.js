@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import { FaTrash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
+import Price from "@/components/Price";
+import { useLocale } from "@/context/LocaleContext";
 
 export default function CartPage() {
+  const { t } = useLocale();
   const [cartItems, setCartItems] = useState([]);
   const [initialized, setInitialized] = useState(false);
   const router = useRouter();
@@ -63,19 +66,19 @@ export default function CartPage() {
       {/* Header */}
       <h1 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
         <ShoppingCart size={32} className="text-indigo-600" />
-        My Cart
+        {t("cart.title")}
       </h1>
 
       {!initialized ? (
-        <p className="text-center text-gray-600">Loading...</p>
+        <p className="text-center text-gray-600">{t("cart.loading")}</p>
       ) : cartItems.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-gray-500 text-lg">🛍️ Your Cart is Empty</p>
+          <p className="text-gray-500 text-lg">🛍️ {t("cart.empty")}</p>
           <button
             onClick={() => router.push("/shop")}
             className="mt-4 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition"
           >
-            Continue Shopping
+            {t("cart.continueShopping")}
           </button>
         </div>
       ) : (
@@ -96,9 +99,10 @@ export default function CartPage() {
                     <h2 className="font-semibold text-gray-800 text-lg line-clamp-1">
                       {item.name}
                     </h2>
-                    <p className="text-indigo-600 font-bold text-lg">
-                      ₹{Number(item.price).toLocaleString()}
-                    </p>
+                    <Price
+                      amount={item.price}
+                      className="text-indigo-600 font-bold text-lg"
+                    />
                   </div>
                 </div>
 
@@ -137,17 +141,15 @@ export default function CartPage() {
           {/* Sticky Checkout Footer */}
           <div className="fixed bottom-0 left-0 right-0 bg-white shadow-xl p-6 flex justify-between items-center border-t">
             <div className="text-xl font-bold text-gray-900">
-              Subtotal:{" "}
-              <span className="text-indigo-700">
-                ₹{subtotal.toLocaleString()}
-              </span>
+              {t("cart.subtotal")}:{" "}
+              <Price amount={subtotal} className="text-indigo-700" />
             </div>
 
             <button
               onClick={handleCheckout}
               className="bg-green-600 text-white px-6 py-3 rounded-full text-lg hover:bg-green-700 transition active:scale-95"
             >
-              Checkout →
+              {t("cart.checkout")} →
             </button>
           </div>
         </>

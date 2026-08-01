@@ -2,8 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import ContactForm from "./ContactForm";
+import { useLocale } from "@/context/LocaleContext";
+import { pickLocalized } from "@/lib/i18nContent";
 
 const ContactSection = () => {
+  const { t, language } = useLocale();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,14 +46,12 @@ const ContactSection = () => {
   }, []);
 
   if (loading) {
-    return <p className="text-center py-10">Loading...</p>;
+    return <p className="text-center py-10">{t("contact.loading")}</p>;
   }
 
   if (!data) {
     return (
-      <p className="text-center py-10 text-red-500">
-        Contact info not found.
-      </p>
+      <p className="text-center py-10 text-red-500">{t("contact.notFound")}</p>
     );
   }
 
@@ -67,8 +68,12 @@ const ContactSection = () => {
             />
           )}
 
-          <h2 className="text-3xl font-bold">{data.title}</h2>
-          <p className="text-gray-700">{data.description}</p>
+          <h2 className="text-3xl font-bold">
+            {pickLocalized(data, "title", language, t("contact.defaultTitle"))}
+          </h2>
+          <p className="text-gray-700">
+            {pickLocalized(data, "description", language, t("contact.defaultDescription"))}
+          </p>
 
           <div className="space-y-2">
             {data.address && <p>📍 {data.address}</p>}

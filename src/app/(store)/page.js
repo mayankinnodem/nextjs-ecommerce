@@ -35,7 +35,7 @@ export default function Home() {
     <div>
       <Sections section="landingpage-frontsection"/>
       <Category/>
-      <ProductsList limit={8} title="Featured Products" />
+      <ProductsList limit={8} titleKey="products.featured" />
       <Flags/>
       <AboutSection/>
       <Reviews/>

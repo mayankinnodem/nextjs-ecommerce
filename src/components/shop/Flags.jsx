@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
+import { useLocale } from "@/context/LocaleContext";
 
 export default function Flags() {
+  const { t } = useLocale();
   const [trending, setTrending] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
@@ -60,15 +62,11 @@ export default function Flags() {
             ))
           : products.length > 0
           ? products.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                onAddToCart={(p) => console.log("Add to cart:", p)}
-              />
+              <ProductCard key={product._id} product={product} />
             ))
           : (
             <p className="col-span-full text-center text-gray-500">
-              No products found!
+              {t("products.noProducts")}
             </p>
           )}
       </div>
@@ -77,9 +75,8 @@ export default function Flags() {
 
   return (
     <>
-      {renderFlagSection("Trending Products", trending)}
-      {renderFlagSection("Featured Products", featured)}
-      {renderFlagSection("New Arrivals", newArrivals)}
+      {renderFlagSection(t("products.trending"), trending)}
+      {renderFlagSection(t("products.newArrivals"), newArrivals)}
     </>
   );
 }

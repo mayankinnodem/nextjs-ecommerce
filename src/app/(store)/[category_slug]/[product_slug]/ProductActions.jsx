@@ -13,8 +13,11 @@ import {
   Plus,
   Zap,
 } from "lucide-react";
+import Price from "@/components/Price";
+import { useLocale } from "@/context/LocaleContext";
 
 export default function ProductActions({ product }) {
+  const { t, formatPrice } = useLocale();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [wish, setWish] = useState(false);
@@ -55,7 +58,7 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
   const toggleWish = async () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user?._id) {
-      window.location.href = `/auth/login?redirect=/${product.category.slug}/${product.slug}`;
+      window.location.href = `/login?redirect=/${product.category.slug}/${product.slug}`;
       return;
     }
 
@@ -77,6 +80,7 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
       syncWishlistIds((ids) =>
         wish ? ids.filter((id) => id !== product._id) : [...ids, product._id]
       );
+      window.dispatchEvent(new CustomEvent("wishlistUpdated"));
     } catch (e) {
       console.log("Wishlist error:", e);
     }
@@ -109,19 +113,23 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
     const totalQty = cart.reduce((a, i) => a + i.quantity, 0);
     window.dispatchEvent(new CustomEvent("cartUpdated", { detail: totalQty }));
 
-    setTimeout(() => {
-      setAdding(false);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 1500);
-    }, 900);
+    setAdding(false);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
   };
 
-  /* ---------------- Buy Now ---------------- */
   const buyNow = () => {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (!user?._id) {
+      window.location.href = `/login?redirect=/checkout`;
+      return;
+    }
+    if (outOfStock) return;
+
     addToCart();
     setTimeout(() => {
       window.location.href = "/checkout";
-    }, 800);
+    }, 300);
   };
 
   return (
@@ -131,57 +139,54 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
       <div className="space-y-1">
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold text-indigo-700">
-            ₹{totalPrice}
+            {formatPrice(totalPrice)}
           </span>
 
           {discount > 0 && (
             <span className="line-through text-gray-400">
-              ₹{totalMrp}
+              {formatPrice(totalMrp)}
             </span>
           )}
         </div>
 
         <p className="text-sm text-gray-600">
-          ₹{price} × {qty} item{qty > 1 ? "s" : ""}
+          {formatPrice(price)} × {qty} item{qty > 1 ? "s" : ""}
         </p>
 
         {discount > 0 && totalSaving > 0 && (
           <p className="text-green-600 text-sm font-semibold">
-            You save ₹{totalSaving}
+            {t("product.youSave", { amount: formatPrice(totalSaving) })}
           </p>
         )}
       </div>
 
       {/* 📦 STOCK */}
       {outOfStock ? (
-        <p className="text-red-600 font-semibold">Out of Stock</p>
+        <p className="text-red-600 font-semibold">{t("product.outOfStock")}</p>
       ) : lowStock ? (
         <p className="text-orange-600 font-semibold">
-          Only {stock} left – hurry!
+          {t("product.onlyLeft", { count: stock })}
         </p>
       ) : (
-        <p className="text-green-600">In Stock</p>
+        <p className="text-green-600">{t("product.inStock")}</p>
       )}
 
-      {/* 🔢 QUANTITY */}
       {!outOfStock && (
         <div className="flex items-center gap-3">
-          <span className="font-medium">Quantity</span>
+          <span className="font-medium">{t("product.quantity")}</span>
           <div className="flex items-center border rounded-lg">
             <button
-              onClick={() =>
-                setQty((q) => Math.max(minOrder, q - 1))
-              }
-              className="px-3 py-1"
+              onClick={() => setQty((q) => Math.max(minOrder, q - 1))}
+              className="px-3 py-1 hover:bg-gray-50"
+              aria-label="Decrease quantity"
             >
               <Minus size={16} />
             </button>
             <span className="px-4 font-semibold">{qty}</span>
             <button
-              onClick={() =>
-                setQty((q) => Math.min(stock, q + 1))
-              }
-              className="px-3 py-1"
+              onClick={() => setQty((q) => Math.min(stock, q + 1))}
+              className="px-3 py-1 hover:bg-gray-50"
+              aria-label="Increase quantity"
             >
               <Plus size={16} />
             </button>
@@ -199,7 +204,7 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
           size={20}
           className={wish ? "text-red-500 fill-red-500" : "text-gray-700"}
         />
-        {wish ? "Wishlisted" : "Add to Wishlist"}
+        {wish ? t("product.wishlisted") : t("product.wishlist")}
       </button>
 
       {/* 🛒 ADD TO CART */}
@@ -217,15 +222,15 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
       >
         {adding ? (
           <>
-            <Loader2 size={20} className="animate-spin" /> Adding...
+            <Loader2 size={20} className="animate-spin" /> {t("product.adding")}
           </>
         ) : added ? (
           <>
-            <CheckCircle2 size={20} /> Added to Cart
+            <CheckCircle2 size={20} /> {t("product.addedToCart")}
           </>
         ) : (
           <>
-            <ShoppingCart size={20} /> Add to Cart
+            <ShoppingCart size={20} /> {t("product.addToCart")}
           </>
         )}
       </button>
@@ -234,22 +239,22 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
       {!outOfStock && (
         <button
           onClick={buyNow}
-          className="w-full py-3 rounded-lg flex items-center justify-center gap-2 bg-orange-500 text-white hover:bg-orange-600"
+          className="w-full py-3 rounded-lg flex items-center justify-center gap-2 bg-amber-500 text-white hover:bg-amber-600 transition"
         >
-          <Zap size={20} /> Buy Now
+          <Zap size={20} /> {t("product.buyNow")}
         </button>
       )}
 
       {/* 🔐 TRUST INFO */}
       <div className="pt-3 space-y-2 text-sm text-gray-600 border-t">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={16} /> Secure Payments
+          <ShieldCheck size={16} /> {t("product.securePayments")}
         </div>
         <div className="flex items-center gap-2">
-          <RotateCcw size={16} /> Easy Returns
+          <RotateCcw size={16} /> {t("product.easyReturns")}
         </div>
         <div className="flex items-center gap-2">
-          <Truck size={16} /> Fast Delivery
+          <Truck size={16} /> {t("product.fastDelivery")}
         </div>
       </div>
     </div>

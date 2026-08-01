@@ -1,21 +1,29 @@
-// /src/app/help/page.js
 "use client";
 
-import { useState } from "react";
-import { FaEnvelope, FaPhone, FaComments } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { FaEnvelope, FaPhone } from "react-icons/fa";
 
 export default function HelpPage() {
+  const [contact, setContact] = useState(null);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [formMessage, setFormMessage] = useState("");
+  const [formError, setFormError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const faqCategories = [
     {
       category: "Orders",
       faqs: [
         {
           question: "How can I place an order?",
-          answer: "Browse products, add items to your cart, and checkout using the available payment methods. You can review your order before finalizing.",
+          answer:
+            "Browse products, add items to your cart, and proceed to checkout. You can pay via Cash on Delivery or online payment.",
         },
         {
-          question: "Can I cancel or modify my order?",
-          answer: "Orders can be modified or canceled within 1 hour of placement. After that, please contact our support team.",
+          question: "Can I cancel my order?",
+          answer:
+            "Pending orders can be cancelled from your account dashboard under My Orders.",
         },
       ],
     },
@@ -23,12 +31,14 @@ export default function HelpPage() {
       category: "Shipping",
       faqs: [
         {
-          question: "What are the shipping options?",
-          answer: "We offer Standard and Express shipping. Free standard shipping for orders above ₹999.",
+          question: "What are the shipping charges?",
+          answer:
+            "Standard shipping is ₹99. Orders above ₹999 qualify for free shipping.",
         },
         {
           question: "How do I track my order?",
-          answer: "Go to the Track Order page and enter your Order ID to see real-time updates on your shipment.",
+          answer:
+            "Use the Track Order page with your Order ID, or check status in My Orders after logging in.",
         },
       ],
     },
@@ -37,64 +47,91 @@ export default function HelpPage() {
       faqs: [
         {
           question: "What is the return policy?",
-          answer: "You can return most products within 15 days of delivery. Some items like perishables and personal care products are non-returnable.",
+          answer:
+            "Most products can be returned within 15 days of delivery. See our Shipping & Returns page for details.",
         },
         {
-          question: "How do I request a refund?",
-          answer: "Submit a return request via your account or contact our support. Refunds are processed within 5-7 business days after receiving the returned product.",
-        },
-      ],
-    },
-    {
-      category: "Payments",
-      faqs: [
-        {
-          question: "Which payment methods are accepted?",
-          answer: "We accept Credit/Debit Cards, UPI, Net Banking, and Cash on Delivery (COD) for select locations.",
-        },
-        {
-          question: "Is online payment secure?",
-          answer: "Yes, all transactions are encrypted and handled by secure payment gateways. We do not store your card details.",
+          question: "How long do refunds take?",
+          answer:
+            "Refunds are processed within 5–7 business days after the returned product is received.",
         },
       ],
     },
   ];
 
-  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
-  const [formMessage, setFormMessage] = useState("");
+  useEffect(() => {
+    fetch("/api/store/contact-section")
+      .then((r) => r.json())
+      .then((d) => setContact(d?.data || null))
+      .catch(() => {});
+  }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError("");
+    setFormMessage("");
+
     if (!form.name || !form.email || !form.message) {
-      setFormMessage("Please fill all required fields.");
+      setFormError("Please fill in name, email, and message.");
       return;
     }
-    // Simulated submission
-    setFormMessage("Your message has been sent. Our support team will contact you soon!");
-    setForm({ name: "", email: "", subject: "", message: "" });
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/store/contact-form", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        setFormMessage("Message sent! Our team will get back to you soon.");
+        setForm({ name: "", email: "", phone: "", message: "" });
+      } else {
+        setFormError(json.error || "Failed to send message.");
+      }
+    } catch {
+      setFormError("Server error. Please try again.");
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-      <div className="max-w-6xl w-full bg-white rounded-2xl shadow-lg p-10">
-        <h1 className="text-5xl font-bold text-gray-800 mb-8 text-center">Help & Support</h1>
-        <p className="text-center text-gray-600 mb-10">
-          Find answers to common questions or contact our support team directly.
-        </p>
+    <div className="bg-gray-50 py-10 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            Help & Support
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Find answers below or reach out to our team directly.
+          </p>
+        </div>
 
-        {/* FAQ Section */}
-        <div className="space-y-10">
-          {faqCategories.map((category, idx) => (
-            <div key={idx}>
-              <h2 className="text-3xl font-semibold text-gray-800 mb-4">{category.category}</h2>
-              <div className="space-y-3">
-                {category.faqs.map((faq, index) => (
+        <div className="space-y-8 mb-12">
+          {faqCategories.map((cat, idx) => (
+            <div key={idx} className="bg-white rounded-2xl shadow-sm border p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                {cat.category}
+              </h2>
+              <div className="space-y-2">
+                {cat.faqs.map((faq, i) => (
                   <details
-                    key={index}
-                    className="border rounded-lg p-4 cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-200"
+                    key={i}
+                    className="group border rounded-lg p-4 bg-gray-50 hover:bg-gray-100/80 transition"
                   >
-                    <summary className="font-medium text-gray-800">{faq.question}</summary>
-                    <p className="mt-2 text-gray-600">{faq.answer}</p>
+                    <summary className="font-medium text-gray-800 cursor-pointer list-none flex justify-between items-center">
+                      {faq.question}
+                      <span className="text-indigo-500 group-open:rotate-45 transition text-xl leading-none">
+                        +
+                      </span>
+                    </summary>
+                    <p className="mt-3 text-gray-600 text-sm leading-relaxed">
+                      {faq.answer}
+                    </p>
                   </details>
                 ))}
               </div>
@@ -102,64 +139,78 @@ export default function HelpPage() {
           ))}
         </div>
 
-        {/* Contact Section */}
-        <div className="mt-16">
-          <h2 className="text-4xl font-semibold text-gray-800 mb-6 text-center">Contact Us</h2>
-          <div className="flex flex-col sm:flex-row justify-around items-start sm:items-center gap-6 mb-8">
-            <div className="flex items-center gap-2 text-gray-700">
-              <FaEnvelope className="text-blue-500" /> support@myshop.com
-            </div>
-            <div className="flex items-center gap-2 text-gray-700">
-              <FaPhone className="text-green-500" /> +91 98765 43210
-            </div>
-            <div className="flex items-center gap-2 text-gray-700">
-              <FaComments className="text-purple-500" /> Live Chat Available 9AM-6PM IST
-            </div>
+        <div className="bg-white rounded-2xl shadow-sm border p-6 sm:p-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+            Contact Us
+          </h2>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-6 mb-8 text-gray-700">
+            {contact?.email && (
+              <a
+                href={`mailto:${contact.email}`}
+                className="flex items-center gap-2 hover:text-indigo-600 transition"
+              >
+                <FaEnvelope className="text-indigo-500" /> {contact.email}
+              </a>
+            )}
+            {contact?.phone && (
+              <a
+                href={`tel:${contact.phone}`}
+                className="flex items-center gap-2 hover:text-indigo-600 transition"
+              >
+                <FaPhone className="text-emerald-500" /> {contact.phone}
+              </a>
+            )}
           </div>
 
-          {/* Contact Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="bg-gray-50 p-6 rounded-xl shadow-inner space-y-4 max-w-2xl mx-auto"
-          >
+          <form onSubmit={handleSubmit} className="max-w-xl mx-auto space-y-4">
             <input
               type="text"
-              placeholder="Your Name"
+              placeholder="Your Name *"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="input-field"
             />
             <input
               type="email"
-              placeholder="Your Email"
+              placeholder="Your Email *"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="input-field"
             />
             <input
-              type="text"
-              placeholder="Subject (Optional)"
-              value={form.subject}
-              onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              type="tel"
+              placeholder="Phone (optional)"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              className="input-field"
             />
             <textarea
-              placeholder="Your Message"
+              placeholder="Your Message *"
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="input-field"
               rows={5}
-            ></textarea>
+            />
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition"
+              disabled={loading}
+              className="btn-primary w-full py-3 disabled:opacity-60"
             >
-              Send Message
+              {loading ? "Sending..." : "Send Message"}
             </button>
+            {formError && <div className="alert-error text-sm">{formError}</div>}
             {formMessage && (
-              <p className="text-center text-green-600 font-medium mt-2">{formMessage}</p>
+              <div className="alert-success text-sm">{formMessage}</div>
             )}
           </form>
+
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Or visit our{" "}
+            <Link href="/contact" className="text-indigo-600 hover:underline">
+              Contact page
+            </Link>
+          </p>
         </div>
       </div>
     </div>

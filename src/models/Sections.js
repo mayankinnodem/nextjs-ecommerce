@@ -17,6 +17,8 @@ const SectionsSchema = new mongoose.Schema(
       url: String,
       public_id: String,
     },
+
+    translations: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }
 );

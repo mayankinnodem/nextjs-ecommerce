@@ -3,6 +3,8 @@ import "../globals.css";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import ViewCartFloatingButton from "@/components/CartButton";
+import ChatBot from "@/components/ChatBot";
+import StoreProviders from "@/components/StoreProviders";
 import { getSiteMetadata } from "@/lib/metadata";
 
 export async function generateMetadata() {
@@ -11,18 +13,17 @@ export async function generateMetadata() {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <header>
+        <StoreProviders>
           <Navbar />
-        </header>
-        <main className="main-container bg-white">
-          {children}
-          <ViewCartFloatingButton />
-        </main>
-        <footer>
+          <main className="main-container bg-white">
+            {children}
+            <ViewCartFloatingButton />
+            <ChatBot />
+          </main>
           <Footer />
-        </footer>
+        </StoreProviders>
       </body>
     </html>
   );

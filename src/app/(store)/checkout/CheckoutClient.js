@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import countriesData from "@/lib/countries.json" assert { type: "json" };
+import Price from "@/components/Price";
+import { useLocale } from "@/context/LocaleContext";
+import { FREE_SHIPPING_THRESHOLD_INR } from "@/lib/localeConfig";
 
 export default function CheckoutClient() {
   const router = useRouter();
   const params = useSearchParams();
-  const redirectAfter = params.get("redirect") || "/";
+  const { t, formatPrice } = useLocale();
 
   const [user, setUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
@@ -20,6 +24,8 @@ export default function CheckoutClient() {
   const [paymentMode, setPaymentMode] = useState("COD");
   const [loading, setLoading] = useState(false);
   const [sameAsProfile, setSameAsProfile] = useState(true);
+  const [formError, setFormError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const [address, setAddress] = useState({
     name: "",
@@ -32,25 +38,22 @@ export default function CheckoutClient() {
     pincode: "",
   });
 
-  // -----------------------------------
-  // LOAD USER + CART + PREFILL ADDRESS
-  // -----------------------------------
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem("user") || "null");
     const c = JSON.parse(localStorage.getItem("cart") || "[]");
 
     if (!u) {
-      router.push(`/auth/login?redirect=/checkout`);
+      router.push(`/login?redirect=/checkout`);
       return;
     }
 
     setUser(u);
     setCartItems(c);
 
-    const countryObj = countries.find(c => c.name === (u.country || "India"));
+    const countryObj = countries.find((x) => x.name === (u.country || "India"));
     setStates(countryObj?.states || []);
 
-    const stateObj = countryObj?.states?.find(s => s.name === u.state);
+    const stateObj = countryObj?.states?.find((s) => s.name === u.state);
     setCities(stateObj?.cities || []);
 
     setAddress({
@@ -65,44 +68,68 @@ export default function CheckoutClient() {
     });
 
     setInitialized(true);
-  }, []);
+  }, [router, countries]);
 
-  // -----------------------------------
-  // HANDLE DROPDOWNS
-  // -----------------------------------
   useEffect(() => {
-    const c = countries.find(x => x.name === address.country);
+    const c = countries.find((x) => x.name === address.country);
     setStates(c?.states || []);
-  }, [address.country]);
+  }, [address.country, countries]);
 
   useEffect(() => {
-    const s = states.find(x => x.name === address.state);
+    const s = states.find((x) => x.name === address.state);
     setCities(s?.cities || []);
-  }, [address.state]);
+  }, [address.state, states]);
 
-  // -----------------------------------
-  // PRICE CALCULATION
-  // -----------------------------------
   const subtotal = cartItems.reduce((t, i) => t + i.price * i.quantity, 0);
-  const shipping = subtotal > 0 ? 99 : 0;
+  const shipping =
+    subtotal >= FREE_SHIPPING_THRESHOLD_INR ? 0 : subtotal > 0 ? 99 : 0;
   const total = subtotal + shipping;
 
-  // ---------------- VALIDATION ----------------
-  const validatePhone = v => /^\d{10}$/.test(v);
-  const validatePincode = v => /^\d{6}$/.test(v);
+  const validatePhone = (v) => /^\d{10}$/.test(v);
+  const validatePincode = (v) => /^\d{6}$/.test(v);
 
-  // -----------------------------------
-  // PLACE ORDER
-  // -----------------------------------
+  const getShippingAddress = () => {
+    if (sameAsProfile) {
+      return {
+        name: user.name || "",
+        phone: user.phone || "",
+        alternatePhone: "",
+        street: user.address || "",
+        city: user.city || "",
+        state: user.state || "",
+        pincode: user.pincode || "",
+        country: user.country || "India",
+      };
+    }
+    return address;
+  };
+
   const handlePlaceOrder = async () => {
-    if (!cartItems.length) return alert("Cart empty.");
+    setFormError("");
+    setSuccessMsg("");
 
-    if (!validatePhone(address.phone)) return alert("Enter valid phone.");
-    if (address.alternatePhone && !validatePhone(address.alternatePhone))
-      return alert("Invalid alternate phone.");
-    if (!validatePincode(address.pincode)) return alert("Invalid pincode.");
-    if (!address.name || !address.street || !address.city || !address.state)
-      return alert("Fill all required shipping info.");
+    const ship = getShippingAddress();
+
+    if (!cartItems.length) {
+      setFormError("Your cart is empty. Add products before checkout.");
+      return;
+    }
+    if (!validatePhone(ship.phone)) {
+      setFormError("Enter a valid 10-digit phone number.");
+      return;
+    }
+    if (ship.alternatePhone && !validatePhone(ship.alternatePhone)) {
+      setFormError("Alternate phone must be 10 digits.");
+      return;
+    }
+    if (!validatePincode(ship.pincode)) {
+      setFormError("Enter a valid 6-digit pincode.");
+      return;
+    }
+    if (!ship.name || !ship.street || !ship.city || !ship.state) {
+      setFormError("Please fill all required shipping details.");
+      return;
+    }
 
     setLoading(true);
 
@@ -112,8 +139,8 @@ export default function CheckoutClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user._id,
-          address,
-          items: cartItems.map(i => ({
+          address: ship,
+          items: cartItems.map((i) => ({
             productId: i._id,
             name: i.name,
             price: i.price,
@@ -128,63 +155,80 @@ export default function CheckoutClient() {
 
       if (data.success) {
         localStorage.removeItem("cart");
-        alert("Order Placed Successfully!");
+        window.dispatchEvent(new CustomEvent("cartUpdated", { detail: 0 }));
         router.push("/user-dashboard/orders");
-      } else alert(data.message);
-    } catch (err) {
-      alert("Server error, try again.");
+      } else {
+        setFormError(data.message || "Could not place order. Please try again.");
+      }
+    } catch {
+      setFormError("Server error. Please try again in a moment.");
     }
 
     setLoading(false);
   };
 
-  if (!initialized)
+  if (!initialized) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        <p className="text-lg text-gray-600">Preparing checkout...</p>
+      <div className="min-h-[60vh] flex justify-center items-center">
+        <div className="text-center space-y-3">
+          <div className="skeleton w-12 h-12 rounded-full mx-auto" />
+          <p className="text-gray-600">{t("checkout.preparing")}</p>
+        </div>
       </div>
     );
+  }
 
-  // -----------------------------------
-  // UI RENDER
-  // -----------------------------------
+  if (!cartItems.length) {
+    return (
+      <div className="page-container py-16 text-center space-y-4">
+        <h1 className="text-2xl font-bold text-gray-900">{t("checkout.emptyCart")}</h1>
+        <p className="text-gray-600">Add some products before checking out.</p>
+        <Link href="/shop" className="btn-primary inline-block px-6 py-3">
+          {t("cart.continueShopping")}
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4 flex justify-center">
-      <div className="max-w-6xl w-full bg-white rounded-2xl shadow-xl p-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
-          Checkout 🛍️
+    <div className="bg-gray-50 py-8 sm:py-12 px-4">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+          {t("checkout.title")}
         </h1>
 
-        {/* GRID */}
-        <div className="grid md:grid-cols-2 gap-10">
+        {formError && <div className="alert-error mb-6 max-w-3xl mx-auto">{formError}</div>}
+        {successMsg && <div className="alert-success mb-6 max-w-3xl mx-auto">{successMsg}</div>}
 
-          {/* SHIPPING */}
-          <div>
-            <div className="flex justify-between">
-              <h2 className="text-2xl font-semibold mb-4">Shipping Details</h2>
-
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">{t("checkout.shipping")}</h2>
               <div className="flex items-center gap-3">
-  <span className="text-sm font-semibold">
-    {sameAsProfile ? "Using Profile" : "Edit Address"}
-  </span>
-
-  <div
-    onClick={() => setSameAsProfile(!sameAsProfile)}
-    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all flex items-center 
-      ${sameAsProfile ? "bg-indigo-600" : "bg-gray-300"}`}
-  >
-    <div
-      className={`w-5 h-5 rounded-full bg-white shadow-md transition-all 
-        ${sameAsProfile ? "ml-5" : "ml-0"}`}
-    />
-  </div>
-</div>
-
+                <span className="text-sm text-gray-600">
+                  {sameAsProfile ? t("checkout.usingProfile") : t("checkout.customAddress")}
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={sameAsProfile}
+                  onClick={() => setSameAsProfile(!sameAsProfile)}
+                  className={`w-12 h-7 rounded-full p-1 transition flex items-center ${
+                    sameAsProfile ? "bg-indigo-600" : "bg-gray-300"
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full bg-white shadow transition ${
+                      sameAsProfile ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
             {sameAsProfile ? (
-              <div className="space-y-1 bg-purple-50 p-4 rounded-lg border">
-                <p>{user.name}</p>
+              <div className="space-y-1 bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-gray-700">
+                <p className="font-medium text-gray-900">{user.name}</p>
                 <p>📞 {user.phone}</p>
                 <p>{user.address}</p>
                 <p>
@@ -193,150 +237,160 @@ export default function CheckoutClient() {
                 <p>{user.country}</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <input
-                  placeholder="Full Name"
+                  placeholder="Full Name *"
                   value={address.name}
-                  onChange={e => setAddress({ ...address, name: e.target.value })}
-                  className="w-full border p-3 rounded-lg"
+                  onChange={(e) => setAddress({ ...address, name: e.target.value })}
+                  className="input-field"
                 />
-
                 <input
-                  placeholder="Phone (10 digits)"
+                  placeholder="Phone (10 digits) *"
                   value={address.phone}
                   maxLength={10}
-                  onChange={e =>
-                    setAddress({ ...address, phone: e.target.value.replace(/\D/g, "") })
+                  onChange={(e) =>
+                    setAddress({
+                      ...address,
+                      phone: e.target.value.replace(/\D/g, ""),
+                    })
                   }
-                  className={`w-full border p-3 rounded-lg ${
-                    validatePhone(address.phone) ? "" : "border-red-500"
-                  }`}
+                  className={`input-field ${address.phone && !validatePhone(address.phone) ? "error" : ""}`}
                 />
-
                 <input
                   placeholder="Alternate Phone"
                   value={address.alternatePhone}
                   maxLength={10}
-                  onChange={e =>
-                    setAddress({ ...address, alternatePhone: e.target.value.replace(/\D/g, "") })
+                  onChange={(e) =>
+                    setAddress({
+                      ...address,
+                      alternatePhone: e.target.value.replace(/\D/g, ""),
+                    })
                   }
-                  className="w-full border p-3 rounded-lg"
+                  className="input-field"
                 />
-
                 <input
-                  placeholder="Street Address"
+                  placeholder="Street Address *"
                   value={address.street}
-                  onChange={e => setAddress({ ...address, street: e.target.value })}
-                  className="w-full border p-3 rounded-lg"
+                  onChange={(e) => setAddress({ ...address, street: e.target.value })}
+                  className="input-field"
                 />
-
                 <select
                   value={address.country}
-                  onChange={e => setAddress({ ...address, country: e.target.value })}
-                  className="w-full border p-3 rounded-lg"
+                  onChange={(e) => setAddress({ ...address, country: e.target.value })}
+                  className="input-field"
                 >
-                  {countries.map(c => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
+                  {countries.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {c.name}
+                    </option>
                   ))}
                 </select>
-
                 <select
                   value={address.state}
-                  onChange={e => setAddress({ ...address, state: e.target.value })}
-                  className="w-full border p-3 rounded-lg"
+                  onChange={(e) => setAddress({ ...address, state: e.target.value })}
+                  className="input-field"
                 >
-                  <option>Select State</option>
-                  {states.map(s => (
-                    <option key={s.name} value={s.name}>{s.name}</option>
+                  <option value="">Select State</option>
+                  {states.map((s) => (
+                    <option key={s.name} value={s.name}>
+                      {s.name}
+                    </option>
                   ))}
                 </select>
-
                 <select
                   value={address.city}
-                  onChange={e => setAddress({ ...address, city: e.target.value })}
-                  className="w-full border p-3 rounded-lg"
+                  onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                  className="input-field"
                 >
-                  <option>Select City</option>
+                  <option value="">Select City</option>
                   {cities.map((c, idx) => (
-                    <option key={idx} value={c.name || c}>{c.name || c}</option>
+                    <option key={idx} value={c.name || c}>
+                      {c.name || c}
+                    </option>
                   ))}
                 </select>
-
                 <input
-                  placeholder="Pincode"
+                  placeholder="Pincode *"
                   value={address.pincode}
                   maxLength={6}
-                  onChange={e =>
-                    setAddress({ ...address, pincode: e.target.value.replace(/\D/g, "") })
+                  onChange={(e) =>
+                    setAddress({
+                      ...address,
+                      pincode: e.target.value.replace(/\D/g, ""),
+                    })
                   }
-                  className={`w-full border p-3 rounded-lg ${
-                    validatePincode(address.pincode) ? "" : "border-red-500"
-                  }`}
+                  className={`input-field ${address.pincode && !validatePincode(address.pincode) ? "error" : ""}`}
                 />
-
-                <select
-                  value={paymentMode}
-                  onChange={e => setPaymentMode(e.target.value)}
-                  className="w-full border p-3 rounded-lg"
-                >
-                  <option value="COD">Cash on Delivery</option>
-                  <option value="Online">Online Payment</option>
-                </select>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t("checkout.payment")}
+              </label>
+              <select
+                value={paymentMode}
+                onChange={(e) => setPaymentMode(e.target.value)}
+                className="input-field"
+              >
+                <option value="COD">{t("checkout.cod")}</option>
+                <option value="Online">{t("checkout.online")}</option>
+              </select>
+            </div>
           </div>
 
-          {/* ORDER SUMMARY */}
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">Order Summary</h2>
+          <div className="bg-white rounded-2xl shadow-sm border p-6">
+            <h2 className="text-xl font-semibold mb-4">{t("checkout.summary")}</h2>
 
-            <div className="space-y-3">
-              {cartItems.map(i => (
-                <div key={i._id} className="flex justify-between border-b pb-2">
+            <div className="space-y-4 max-h-80 overflow-y-auto">
+              {cartItems.map((i) => (
+                <div key={i._id} className="flex justify-between gap-3 border-b pb-3">
                   <div className="flex gap-3 items-center">
                     <img
-                      src={i.image}
-                      className="w-16 h-16 rounded object-cover"
+                      src={i.image || "/placeholder.svg"}
+                      alt={i.name}
+                      className="w-14 h-14 rounded-lg object-cover bg-gray-100"
                     />
                     <div>
-                      <p className="font-medium">{i.name}</p>
-                      <p className="text-gray-600 text-sm">Qty: {i.quantity}</p>
+                      <p className="font-medium text-gray-900">{i.name}</p>
+                      <p className="text-sm text-gray-500">Qty: {i.quantity}</p>
                     </div>
                   </div>
-                  <p className="font-semibold text-gray-700">
-                    ₹{(i.price * i.quantity).toLocaleString()}
-                  </p>
+                  <Price amount={i.price * i.quantity} className="font-semibold text-gray-800" />
                 </div>
               ))}
             </div>
 
-            {/* PRICE SUMMARY */}
             <div className="mt-6 border-t pt-4 space-y-2 text-gray-700">
               <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>₹{subtotal.toLocaleString()}</span>
+                <span>{t("checkout.subtotal")}</span>
+                <Price amount={subtotal} />
               </div>
-
               <div className="flex justify-between">
-                <span>Shipping:</span>
-                <span>₹{shipping}</span>
+                <span>{t("checkout.shippingFee")}</span>
+                <span>{shipping === 0 ? t("checkout.free") : formatPrice(shipping)}</span>
               </div>
-
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
-                <span>₹{total.toLocaleString()}</span>
+              {subtotal < FREE_SHIPPING_THRESHOLD_INR && subtotal > 0 && (
+                <p className="text-xs text-emerald-600">
+                  {t("checkout.freeShippingHint", {
+                    amount: formatPrice(FREE_SHIPPING_THRESHOLD_INR - subtotal),
+                  })}
+                </p>
+              )}
+              <div className="flex justify-between text-lg font-bold text-gray-900 pt-2">
+                <span>{t("checkout.total")}</span>
+                <Price amount={total} />
               </div>
 
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
-                className="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-60"
+                className="btn-accent w-full mt-4 py-3 disabled:opacity-60"
               >
-                {loading ? "Placing Order..." : "Place Order"}
+                {loading ? t("checkout.placing") : t("checkout.placeOrder")}
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

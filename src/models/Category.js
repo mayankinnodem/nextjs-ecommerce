@@ -16,6 +16,7 @@ const CategorySchema = new mongoose.Schema(
       public_id: String, // cloudinary public id
     },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
+    translations: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }
 );

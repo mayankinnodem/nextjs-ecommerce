@@ -8,12 +8,13 @@ import React, {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProductCard from "@/components/shop/ProductCard";
-
-/* ===================== MAIN CONTENT ===================== */
+import { useLocale } from "@/context/LocaleContext";
+import { categoryDisplayName } from "@/lib/i18nContent";
 
 function ShopContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, formatPrice, language } = useLocale();
 
   /* ---------- STATES ---------- */
   const [products, setProducts] = useState([]);
@@ -133,7 +134,7 @@ function ShopContent() {
           {/* SEARCH */}
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder={t("shop.search")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -151,10 +152,10 @@ function ShopContent() {
             }}
             className="border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">All Categories</option>
+            <option value="all">{t("shop.allCategories")}</option>
             {categories.map((cat) => (
               <option key={cat._id} value={cat.slug}>
-                {cat.name}
+                {categoryDisplayName(cat, language)}
               </option>
             ))}
           </select>
@@ -168,10 +169,10 @@ function ShopContent() {
             }}
             className="border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">All Prices</option>
-            <option value="under5k">Under ₹5,000</option>
-            <option value="5kTo20k">₹5,000 – ₹20,000</option>
-            <option value="above20k">Above ₹20,000</option>
+            <option value="all">{t("shop.allPrices")}</option>
+            <option value="under5k">{t("shop.under5k", { amount: formatPrice(5000) })}</option>
+            <option value="5kTo20k">{t("shop.5kTo20k", { low: formatPrice(5000), high: formatPrice(20000) })}</option>
+            <option value="above20k">{t("shop.above20k", { amount: formatPrice(20000) })}</option>
           </select>
 
           {/* SORT */}
@@ -183,23 +184,23 @@ function ShopContent() {
             }}
             className="border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500"
           >
-            <option value="default">Sort By</option>
-            <option value="lowToHigh">Price: Low → High</option>
-            <option value="highToLow">Price: High → Low</option>
+            <option value="default">{t("shop.sortBy")}</option>
+            <option value="lowToHigh">{t("shop.priceLowHigh")}</option>
+            <option value="highToLow">{t("shop.priceHighLow")}</option>
           </select>
         </div>
 
         {/* INFO + RESET */}
         <div className="flex justify-between items-center text-sm text-gray-600">
           <span>
-            Showing <b>{products.length}</b> of <b>{total}</b> products
+            {t("shop.showing", { count: products.length, total })}
           </span>
 
           <button
             onClick={resetFilters}
-            className="text-blue-600 hover:underline"
+            className="text-indigo-600 hover:underline"
           >
-            Reset Filters
+            {t("shop.resetFilters")}
           </button>
         </div>
       </div>
@@ -223,7 +224,7 @@ function ShopContent() {
           ))
         ) : (
           <p className="col-span-full text-center text-gray-500">
-            No products found
+            {t("products.noProducts")}
           </p>
         )}
       </div>
@@ -236,11 +237,11 @@ function ShopContent() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
           >
-            Prev
+            {t("shop.prev")}
           </button>
 
           <span className="font-semibold">
-            Page {page} of {totalPages}
+            {t("shop.page", { page, total: totalPages })}
           </span>
 
           <button
@@ -250,7 +251,7 @@ function ShopContent() {
             }
             className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
           >
-            Next
+            {t("shop.next")}
           </button>
         </div>
       )}

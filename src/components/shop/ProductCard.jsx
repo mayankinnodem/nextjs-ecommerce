@@ -10,8 +10,11 @@ import {
   Flame,
   Sparkles,
 } from "lucide-react";
+import Price from "@/components/Price";
+import { useLocale } from "@/context/LocaleContext";
 
 export default function ProductCard({ product }) {
+  const { t } = useLocale();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -20,7 +23,7 @@ export default function ProductCard({ product }) {
   const categorySlug = product?.category?.slug || "category";
   const productSlug = product?.slug || "product";
 
-  const image = product?.images?.[0]?.url || "/placeholder.png";
+  const image = product?.images?.[0]?.url || "/placeholder.svg";
   const price = product?.salePrice || product?.price;
   const mrp = product?.price;
   const discount = product?.discount || 0;
@@ -46,7 +49,7 @@ export default function ProductCard({ product }) {
   const handleWishlistToggle = async () => {
     const localUser = JSON.parse(localStorage.getItem("user"));
     if (!localUser?._id) {
-      window.location.href = `/auth/login?redirect=/${categorySlug}/${productSlug}`;
+      window.location.href = `/login?redirect=/${categorySlug}/${productSlug}`;
       return;
     }
 
@@ -68,6 +71,7 @@ export default function ProductCard({ product }) {
       syncWishlistIds((ids) =>
         isWishlisted ? ids.filter((id) => id !== product._id) : [...ids, product._id]
       );
+      window.dispatchEvent(new CustomEvent("wishlistUpdated"));
     } catch (err) {
       console.log("Wishlist error:", err);
     } finally {
@@ -101,11 +105,9 @@ export default function ProductCard({ product }) {
       })
     );
 
-    setTimeout(() => {
-      setAdding(false);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 1500);
-    }, 1000);
+    setAdding(false);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
   };
 
   return (
@@ -116,7 +118,8 @@ export default function ProductCard({ product }) {
       <button
         onClick={handleWishlistToggle}
         disabled={busy}
-        className="absolute top-3 right-3 bg-white p-2 rounded-full shadow z-20"
+        aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        className="absolute top-3 right-3 bg-white p-2 rounded-full shadow z-20 hover:scale-105 transition"
       >
         <Heart
           size={18}
@@ -148,7 +151,10 @@ export default function ProductCard({ product }) {
         <img
           src={image}
           alt={product?.name}
-          className="w-full h-56 object-cover group-hover:scale-105 transition"
+          className="w-full h-52 sm:h-56 object-cover group-hover:scale-105 transition bg-gray-100"
+          onError={(e) => {
+            e.currentTarget.src = "/placeholder.svg";
+          }}
         />
       </Link>
 
@@ -169,9 +175,9 @@ export default function ProductCard({ product }) {
 
         {/* Price */}
         <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-indigo-700">₹{price}</span>
+          <Price amount={price} className="text-lg font-bold text-indigo-700" />
           {discount > 0 && (
-            <span className="text-sm line-through text-gray-400">₹{mrp}</span>
+            <Price amount={mrp} className="text-sm line-through text-gray-400" />
           )}
         </div>
 
@@ -191,19 +197,18 @@ export default function ProductCard({ product }) {
 
         {/* Stock Info */}
         {stock === 0 ? (
-          <p className="text-red-500 text-sm font-semibold">Out of Stock</p>
+          <p className="text-red-500 text-sm font-semibold">{t("product.outOfStock")}</p>
         ) : lowStock ? (
           <p className="text-orange-500 text-sm font-semibold">
-            Only {stock} left
+            {t("product.onlyLeft", { count: stock })}
           </p>
         ) : (
-          <p className="text-green-600 text-sm">In Stock</p>
+          <p className="text-green-600 text-sm">{t("product.inStock")}</p>
         )}
 
-        {/* Added Badge */}
         {added && (
           <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
-            <CheckCircle2 size={16} /> Added to Cart
+            <CheckCircle2 size={16} /> {t("product.addedToCart")}
           </div>
         )}
 
@@ -222,15 +227,15 @@ export default function ProductCard({ product }) {
         >
           {adding ? (
             <>
-              <Loader2 size={18} className="animate-spin" /> Adding...
+              <Loader2 size={18} className="animate-spin" /> {t("product.adding")}
             </>
           ) : added ? (
             <>
-              <CheckCircle2 size={18} /> Added
+              <CheckCircle2 size={18} /> {t("product.added")}
             </>
           ) : (
             <>
-              <ShoppingCart size={18} /> Add to Cart
+              <ShoppingCart size={18} /> {t("product.addToCart")}
             </>
           )}
         </button>

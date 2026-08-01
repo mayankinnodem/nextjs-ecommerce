@@ -1,84 +1,91 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useLocale } from "@/context/LocaleContext";
+import { pickLocalized } from "@/lib/i18nContent";
 
 const AboutSection = () => {
+  const { t, language } = useLocale();
   const [about, setAbout] = useState(null);
   const [loading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    process.env.NEXTAUTH_URL ||
-    "http://localhost:3000";
+  useEffect(() => {
+    fetch("/api/store/about", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => setAbout(data?.about))
+      .catch(() => setAbout(null))
+      .finally(() => setLoading(false));
+  }, []);
 
-useEffect(() => {
-  async function fetchAbout() {
-    try {
-      const res = await fetch("/api/store/about", {
-        cache: "no-store",
-      });
-      const data = await res.json();
-      setAbout(data?.about);
-    } catch (error) {
-      console.log("Error fetching about:", error);
-    } finally {
-      setLoading(false);
-    }
+  if (loading) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="page-container grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="space-y-4">
+            <div className="skeleton h-10 w-3/4" />
+            <div className="skeleton h-4 w-full" />
+            <div className="skeleton h-4 w-5/6" />
+          </div>
+          <div className="skeleton h-80 rounded-xl" />
+        </div>
+      </section>
+    );
   }
 
-  fetchAbout();
-}, []);
+  if (!about) return null;
 
-
-
-  if (loading) return <p>Loading...</p>;
-  if (!about) return <p>No data found!</p>;
+  const title = pickLocalized(about, "title", language, t("about.defaultTitle"));
+  const subtitle = pickLocalized(about, "subtitle", language, "");
+  const description = pickLocalized(about, "description", language, t("about.defaultDescription"));
 
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-gray-100">
-      <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        {/* LEFT */}
+    <section className="py-16 sm:py-20 bg-gradient-to-b from-white to-gray-50">
+      <div className="page-container grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-            {about?.title}
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
+            {title}
           </h2>
+          {subtitle && (
+            <p className="text-lg text-indigo-600 mt-2 font-medium">{subtitle}</p>
+          )}
+          <p className="mt-5 text-gray-600 leading-relaxed">{description}</p>
 
-          <p className="text-lg text-gray-600 mt-3">{about?.subtitle}</p>
-
-          <p className="mt-5 text-gray-700 leading-relaxed">
-            {about?.description}
-          </p>
-
-          {/* ✅ Stats */}
-          <div className="grid grid-cols-2 gap-6 mt-8">
-            {about?.stats?.map((s, i) => (
-              <div key={i} className="flex items-center">
-                <h3 className="text-md font-bold text-gray-900">{s.value}</h3>
-                <p className="text-gray-600 ml-2">{s.label}</p>
-              </div>
-            ))}
-          </div>
+          {about.stats?.length > 0 && (
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              {about.stats.map((s, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-xl p-4 shadow-sm border text-center"
+                >
+                  <p className="text-2xl font-bold text-indigo-600">{s.value}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {pickLocalized(s, "label", language, s.label)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </motion.div>
 
-        {/* RIGHT - use img with onError to handle 404/deleted Cloudinary images */}
-        {about?.image?.url && !imageError && (
+        {about.image?.url && !imageError && (
           <motion.div
-            initial={{ opacity: 0, x: 60 }}
+            initial={{ opacity: 0, x: 40 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
             viewport={{ once: true }}
-            className="relative w-full h-[450px]"
+            className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-lg"
           >
             <img
               src={about.image.url}
               alt="About us"
-              className="rounded-xl shadow-xl object-cover w-full h-full"
+              className="object-cover w-full h-full"
               onError={() => setImageError(true)}
             />
           </motion.div>
