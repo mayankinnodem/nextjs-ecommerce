@@ -155,21 +155,23 @@ export default function Footer() {
               </a>
             )}
 
-            {siteUrl && (
-              <a
-                href={`https://secure.trust-provider.com/ttb_searcher/trustlogo?v_querytype=W&v_shortname=CL1&v_search=${encodeURIComponent(`${siteUrl}/`)}&x=6&y=5`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Secured by PositiveSSL"
-                className="inline-block pt-2"
-              >
-                <img
-                  src="/positivessl-trust-seal.png"
-                  alt="Secured by PositiveSSL"
-                  className="h-[54px] w-auto hover:opacity-90 transition"
-                />
-              </a>
-            )}
+            <a
+              href={`https://secure.trust-provider.com/ttb_searcher/trustlogo?v_querytype=W&v_shortname=CL1&v_search=${encodeURIComponent(
+                siteUrl ? `${siteUrl}/` : "https://tarkeshwarartsglobal.com/"
+              )}&x=6&y=5`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Secured by PositiveSSL"
+              className="inline-block pt-2"
+            >
+              <img
+                src="/positivessl-trust-seal.png"
+                alt="Secured by PositiveSSL"
+                width={222}
+                height={54}
+                className="h-[54px] w-auto hover:opacity-90 transition"
+              />
+            </a>
           </div>
 
           {contact?.socialLinks?.length > 0 && (

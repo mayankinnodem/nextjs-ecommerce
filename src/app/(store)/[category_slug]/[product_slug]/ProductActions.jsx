@@ -133,7 +133,8 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
   };
 
   return (
-    <div className="space-y-5 border rounded-xl p-5 bg-white shadow-sm">
+    <>
+    <div className="space-y-5 card p-5 sm:p-6">
 
       {/* 💰 PRICE */}
       <div className="space-y-1">
@@ -211,13 +212,13 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
       <button
         onClick={addToCart}
         disabled={adding || added || outOfStock}
-        className={`w-full py-3 rounded-lg flex items-center justify-center gap-2
+        className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold
           ${
             outOfStock
-              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
               : added
-              ? "bg-green-600 text-white"
-              : "bg-indigo-600 text-white hover:bg-indigo-700"
+              ? "btn-accent"
+              : "btn-primary"
           }`}
       >
         {adding ? (
@@ -239,7 +240,7 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
       {!outOfStock && (
         <button
           onClick={buyNow}
-          className="w-full py-3 rounded-lg flex items-center justify-center gap-2 bg-amber-500 text-white hover:bg-amber-600 transition"
+          className="w-full py-3 rounded-xl flex items-center justify-center gap-2 bg-amber-500 text-white hover:bg-amber-600 transition font-semibold"
         >
           <Zap size={20} /> {t("product.buyNow")}
         </button>
@@ -258,5 +259,30 @@ const totalSaving = Number(((mrp - price) * qty).toFixed(2));
         </div>
       </div>
     </div>
+
+    {/* Mobile sticky buy bar */}
+    {!outOfStock && (
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe z-40">
+        <div className="page-container py-3 flex items-center gap-3">
+          <div className="shrink-0">
+            <p className="text-xs text-gray-500">{t("checkout.total")}</p>
+            <p className="text-lg font-bold text-indigo-700">{formatPrice(totalPrice)}</p>
+          </div>
+          <button
+            onClick={addToCart}
+            disabled={adding || added}
+            className="btn-primary flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold"
+          >
+            {adding ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <ShoppingCart size={18} />
+            )}
+            {added ? t("product.added") : t("product.addToCart")}
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

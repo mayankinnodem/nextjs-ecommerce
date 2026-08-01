@@ -12,7 +12,7 @@ import {
   FaTimes,
   FaSearch,
 } from "react-icons/fa";
-import { MdPhone, MdEmail, MdLocationOn } from "react-icons/md";
+import { MdPhone, MdEmail } from "react-icons/md";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useLocale } from "@/context/LocaleContext";
 
@@ -185,7 +185,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
+      <div className="page-container py-3 flex justify-between items-center gap-3">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           {headerInfo?.logo?.url ? (
             <Image
@@ -301,7 +301,8 @@ export default function Navbar() {
       </div>
 
       {mobileMenu && (
-        <div className="lg:hidden border-t px-4 py-4 space-y-4 bg-white animate-fadeIn">
+        <div className="lg:hidden border-t bg-white animate-fadeIn shadow-inner">
+          <div className="page-container py-4 space-y-4">
           <div className="relative">
             <input
               className="input-field pr-10 py-2 text-sm"
@@ -319,24 +320,29 @@ export default function Navbar() {
             )}
           </div>
 
-          <nav className="flex flex-col gap-3 text-gray-700 font-medium">
+          <nav className="flex flex-col gap-1 text-gray-700 font-medium">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenu(false)}
-                className="hover:text-indigo-600 transition"
+                className="hover:text-indigo-600 hover:bg-indigo-50 transition px-3 py-2.5 rounded-lg"
               >
                 {link.label}
               </Link>
             ))}
-            <hr className="border-gray-100" />
-            <Link href="/cart" onClick={() => setMobileMenu(false)}>
+            <hr className="border-gray-100 my-2" />
+            <Link
+              href="/cart"
+              onClick={() => setMobileMenu(false)}
+              className="px-3 py-2.5 rounded-lg hover:bg-indigo-50"
+            >
               {t("nav.cart")} ({cartCount})
             </Link>
             <Link
               href="/user-dashboard/wishlist"
               onClick={() => setMobileMenu(false)}
+              className="px-3 py-2.5 rounded-lg hover:bg-indigo-50"
             >
               {t("nav.wishlist")} ({wishCount})
             </Link>
@@ -344,16 +350,21 @@ export default function Navbar() {
               <Link
                 href="/user-dashboard"
                 onClick={() => setMobileMenu(false)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-indigo-50"
               >
                 <FaUser /> {t("nav.account")}
               </Link>
             ) : (
-              <Link href="/login" onClick={() => setMobileMenu(false)}>
-                {t("nav.login")}
+              <Link
+                href="/login"
+                onClick={() => setMobileMenu(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-indigo-50"
+              >
+                <FaUser /> {t("nav.login")}
               </Link>
             )}
           </nav>
+          </div>
         </div>
       )}
     </header>

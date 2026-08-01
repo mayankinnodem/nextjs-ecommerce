@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { MessageCircle, X, Send, Bot, Loader2 } from "lucide-react";
 import { useLocale } from "@/context/LocaleContext";
+import Price from "@/components/Price";
 
 function renderMarkdown(text) {
   return text
@@ -23,7 +24,12 @@ export default function ChatBot() {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  const hiddenPages = ["/admin-dashboard", "/admin-login"];
+  const hiddenPages = [
+    "/admin-dashboard",
+    "/admin-login",
+    "/cart",
+    "/checkout",
+  ];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,7 +103,7 @@ export default function ChatBot() {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-24 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[380px] h-[min(520px,calc(100vh-8rem))] bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] flex flex-col overflow-hidden animate-fadeIn"
+          className="fixed fixed-safe-bottom-high sm:bottom-24 right-3 sm:right-6 w-[calc(100vw-1.5rem)] sm:w-[380px] h-[min(520px,calc(100dvh-9rem))] bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] flex flex-col overflow-hidden animate-fadeIn"
           role="dialog"
           aria-label={t("chatbot.title")}
         >
@@ -158,7 +164,13 @@ export default function ChatBot() {
                             />
                           )}
                           {link.label}
-                          {link.price ? ` — ₹${link.price}` : ""} →
+                          {link.price ? (
+                            <>
+                              {" — "}
+                              <Price amount={link.price} />
+                            </>
+                          ) : null}{" "}
+                          →
                         </Link>
                       ))}
                     </div>
@@ -228,7 +240,7 @@ export default function ChatBot() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`fixed bottom-6 right-4 sm:right-6 z-[60] w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-105 ${
+        className={`fixed fixed-safe-bottom right-3 sm:right-6 z-[60] w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all ${
           open ? "bg-gray-700" : "bg-indigo-600 hover:bg-indigo-700"
         } text-white`}
         aria-label={open ? t("chatbot.close") : t("chatbot.open")}

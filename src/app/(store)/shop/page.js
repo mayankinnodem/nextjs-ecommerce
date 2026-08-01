@@ -7,6 +7,7 @@ import React, {
   Suspense,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SlidersHorizontal, ChevronDown } from "lucide-react";
 import ProductCard from "@/components/shop/ProductCard";
 import { useLocale } from "@/context/LocaleContext";
 import { categoryDisplayName } from "@/lib/i18nContent";
@@ -16,11 +17,10 @@ function ShopContent() {
   const searchParams = useSearchParams();
   const { t, formatPrice, language } = useLocale();
 
-  /* ---------- STATES ---------- */
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-
   const [loading, setLoading] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -39,12 +39,10 @@ function ShopContent() {
 
   const itemsPerPage = 8;
 
-  /* ===================== FETCH CATEGORIES ===================== */
   const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch("/api/store/categories");
       const data = await res.json();
-
       if (data?.success && Array.isArray(data.categories)) {
         setCategories(data.categories);
       }
@@ -53,7 +51,6 @@ function ShopContent() {
     }
   }, []);
 
-  /* ===================== FETCH PRODUCTS ===================== */
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -67,9 +64,7 @@ function ShopContent() {
       if (priceRange !== "all") params.set("priceRange", priceRange);
       if (sort !== "default") params.set("sort", sort);
 
-      const res = await fetch(
-        `/api/store/products?${params.toString()}`
-      );
+      const res = await fetch(`/api/store/products?${params.toString()}`);
       const data = await res.json();
 
       if (data?.success) {
@@ -91,7 +86,6 @@ function ShopContent() {
     }
   }, [page, search, category, priceRange, sort]);
 
-  /* ===================== EFFECTS ===================== */
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
@@ -100,20 +94,16 @@ function ShopContent() {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Sync URL (no reload)
   useEffect(() => {
     const params = new URLSearchParams();
-
     if (search) params.set("search", search);
     if (category !== "all") params.set("category", category);
     if (priceRange !== "all") params.set("priceRange", priceRange);
     if (sort !== "default") params.set("sort", sort);
     if (page > 1) params.set("page", page.toString());
-
     router.replace(`/shop?${params.toString()}`, { scroll: false });
   }, [search, category, priceRange, sort, page, router]);
 
-  /* ===================== HANDLERS ===================== */
   const resetFilters = () => {
     setSearch("");
     setCategory("all");
@@ -122,157 +112,195 @@ function ShopContent() {
     setPage(1);
   };
 
-  /* ===================== UI ===================== */
+  const activeFilters =
+    (search ? 1 : 0) +
+    (category !== "all" ? 1 : 0) +
+    (priceRange !== "all" ? 1 : 0) +
+    (sort !== "default" ? 1 : 0);
+
   return (
-    <section className="max-w-7xl mx-auto px-4 py-10">
-
-      {/* ================= FILTER BAR ================= */}
-      <div className="bg-white rounded-2xl shadow-md p-5 mb-8 space-y-4">
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-          {/* SEARCH */}
-          <input
-            type="text"
-            placeholder={t("shop.search")}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-
-          {/* CATEGORY */}
-          <select
-            value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-              setPage(1);
-            }}
-            className="border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">{t("shop.allCategories")}</option>
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat.slug}>
-                {categoryDisplayName(cat, language)}
-              </option>
-            ))}
-          </select>
-
-          {/* PRICE */}
-          <select
-            value={priceRange}
-            onChange={(e) => {
-              setPriceRange(e.target.value);
-              setPage(1);
-            }}
-            className="border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">{t("shop.allPrices")}</option>
-            <option value="under5k">{t("shop.under5k", { amount: formatPrice(5000) })}</option>
-            <option value="5kTo20k">{t("shop.5kTo20k", { low: formatPrice(5000), high: formatPrice(20000) })}</option>
-            <option value="above20k">{t("shop.above20k", { amount: formatPrice(20000) })}</option>
-          </select>
-
-          {/* SORT */}
-          <select
-            value={sort}
-            onChange={(e) => {
-              setSort(e.target.value);
-              setPage(1);
-            }}
-            className="border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="default">{t("shop.sortBy")}</option>
-            <option value="lowToHigh">{t("shop.priceLowHigh")}</option>
-            <option value="highToLow">{t("shop.priceHighLow")}</option>
-          </select>
-        </div>
-
-        {/* INFO + RESET */}
-        <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>
-            {t("shop.showing", { count: products.length, total })}
-          </span>
-
-          <button
-            onClick={resetFilters}
-            className="text-indigo-600 hover:underline"
-          >
-            {t("shop.resetFilters")}
-          </button>
-        </div>
-      </div>
-
-      {/* ================= PRODUCT GRID ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {loading ? (
-          Array.from({ length: itemsPerPage }).map((_, i) => (
-            <div
-              key={i}
-              className="h-72 bg-gray-200 animate-pulse rounded-xl"
-            />
-          ))
-        ) : products.length > 0 ? (
-          products.map((product) => (
-            <ProductCard
-              key={product._id}
-              product={product}
-              category_slug={product?.category?.slug}
-            />
-          ))
-        ) : (
-          <p className="col-span-full text-center text-gray-500">
-            {t("products.noProducts")}
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      {/* Hero */}
+      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
+        <div className="page-container py-10 sm:py-14">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            {t("shop.title")}
+          </h1>
+          <p className="mt-2 text-indigo-100 text-base sm:text-lg max-w-xl">
+            {t("shop.subtitle")}
           </p>
-        )}
+        </div>
       </div>
 
-      {/* ================= PAGINATION ================= */}
-      {total > 0 && (
-        <div className="flex justify-center items-center gap-3 mt-10">
-          <button
-            disabled={page === 1 || loading}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-          >
-            {t("shop.prev")}
-          </button>
-
-          <span className="font-semibold">
-            {t("shop.page", { page, total: totalPages })}
+      <section className="page-container py-8 sm:py-10">
+        {/* Mobile filter toggle */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((o) => !o)}
+          className="md:hidden w-full card px-4 py-3 flex items-center justify-between mb-4 font-semibold text-gray-800"
+        >
+          <span className="flex items-center gap-2">
+            <SlidersHorizontal size={18} className="text-indigo-600" />
+            {t("shop.filters")}
+            {activeFilters > 0 && (
+              <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full">
+                {activeFilters}
+              </span>
+            )}
           </span>
+          <ChevronDown
+            size={18}
+            className={`transition ${filtersOpen ? "rotate-180" : ""}`}
+          />
+        </button>
 
-          <button
-            disabled={page === totalPages || loading}
-            onClick={() =>
-              setPage((p) => Math.min(totalPages, p + 1))
-            }
-            className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-          >
-            {t("shop.next")}
-          </button>
+        {/* Filter bar */}
+        <div
+          className={`card p-4 sm:p-5 mb-8 space-y-4 ${
+            filtersOpen ? "block" : "hidden md:block"
+          }`}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <input
+              type="text"
+              placeholder={t("shop.search")}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="input-field"
+            />
+
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setPage(1);
+              }}
+              className="input-field"
+            >
+              <option value="all">{t("shop.allCategories")}</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat.slug}>
+                  {categoryDisplayName(cat, language)}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={priceRange}
+              onChange={(e) => {
+                setPriceRange(e.target.value);
+                setPage(1);
+              }}
+              className="input-field"
+            >
+              <option value="all">{t("shop.allPrices")}</option>
+              <option value="under5k">
+                {t("shop.under5k", { amount: formatPrice(5000) })}
+              </option>
+              <option value="5kTo20k">
+                {t("shop.5kTo20k", {
+                  low: formatPrice(5000),
+                  high: formatPrice(20000),
+                })}
+              </option>
+              <option value="above20k">
+                {t("shop.above20k", { amount: formatPrice(20000) })}
+              </option>
+            </select>
+
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value);
+                setPage(1);
+              }}
+              className="input-field"
+            >
+              <option value="default">{t("shop.sortBy")}</option>
+              <option value="lowToHigh">{t("shop.priceLowHigh")}</option>
+              <option value="highToLow">{t("shop.priceHighLow")}</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm text-gray-600 pt-1">
+            <span>{t("shop.showing", { count: products.length, total })}</span>
+            <button
+              onClick={resetFilters}
+              className="text-indigo-600 font-semibold hover:text-indigo-800 transition text-left sm:text-right"
+            >
+              {t("shop.resetFilters")}
+            </button>
+          </div>
         </div>
-      )}
-    </section>
+
+        {/* Product grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+          {loading
+            ? Array.from({ length: itemsPerPage }).map((_, i) => (
+                <div key={i} className="skeleton h-80 rounded-2xl" />
+              ))
+            : products.length > 0
+            ? products.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  category_slug={product?.category?.slug}
+                />
+              ))
+            : (
+              <div className="col-span-full card text-center py-16 px-6">
+                <p className="text-gray-500 text-lg">{t("products.noProducts")}</p>
+                <button onClick={resetFilters} className="btn-primary mt-4 px-6 py-2.5">
+                  {t("shop.resetFilters")}
+                </button>
+              </div>
+            )}
+        </div>
+
+        {/* Pagination */}
+        {total > 0 && (
+          <div className="flex justify-center items-center gap-2 sm:gap-3 mt-10 flex-wrap">
+            <button
+              disabled={page === 1 || loading}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="btn-secondary px-4 py-2 disabled:opacity-40"
+            >
+              {t("shop.prev")}
+            </button>
+
+            <span className="font-semibold text-sm sm:text-base px-2">
+              {t("shop.page", { page, total: totalPages })}
+            </span>
+
+            <button
+              disabled={page === totalPages || loading}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="btn-secondary px-4 py-2 disabled:opacity-40"
+            >
+              {t("shop.next")}
+            </button>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
-
-/* ===================== SUSPENSE WRAPPER ===================== */
 
 export default function ShopPage() {
   return (
     <Suspense
       fallback={
-        <section className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-72 bg-gray-200 animate-pulse rounded-xl"
-            />
-          ))}
-        </section>
+        <div className="page-container py-10">
+          <div className="skeleton h-32 rounded-2xl mb-8" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="skeleton h-80 rounded-2xl" />
+            ))}
+          </div>
+        </div>
       }
     >
       <ShopContent />

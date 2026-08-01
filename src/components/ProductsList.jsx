@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import ProductCard from "@/components/shop/ProductCard";
 import { useLocale } from "@/context/LocaleContext";
 
@@ -39,14 +40,30 @@ export default function ProductsList({ limit = 8, titleKey = "products.featured"
     fetchProducts();
   }, [limit]);
 
+  const header = (
+    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 section-header">
+      <div>
+        <h2 className="section-title">{title}</h2>
+      </div>
+      <Link
+        href="/shop"
+        className="text-indigo-600 font-semibold text-sm hover:text-indigo-800 transition shrink-0"
+      >
+        {t("products.viewAll")}
+      </Link>
+    </div>
+  );
+
   if (loading) {
     return (
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <h2 className="text-3xl font-extrabold text-gray-900 mb-6">{title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Array.from({ length: limit }).map((_, i) => (
-            <div key={i} className="h-72 bg-gray-200 animate-pulse rounded-xl" />
-          ))}
+      <section className="section-block bg-white">
+        <div className="page-container">
+          {header}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+            {Array.from({ length: limit }).map((_, i) => (
+              <div key={i} className="skeleton h-80 rounded-2xl" />
+            ))}
+          </div>
         </div>
       </section>
     );
@@ -54,24 +71,28 @@ export default function ProductsList({ limit = 8, titleKey = "products.featured"
 
   if (products.length === 0) {
     return (
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <h2 className="text-3xl font-extrabold text-gray-900 mb-6">{title}</h2>
-        <p className="text-center text-gray-500">{t("products.noProducts")}</p>
+      <section className="section-block bg-white">
+        <div className="page-container">
+          {header}
+          <p className="text-center text-gray-500 py-8">{t("products.noProducts")}</p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-10">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-6">{title}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <ProductCard
-            key={product._id}
-            product={product}
-            category_slug={product?.category?.slug}
-          />
-        ))}
+    <section className="section-block bg-white">
+      <div className="page-container">
+        {header}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+          {products.map((product) => (
+            <ProductCard
+              key={product._id}
+              product={product}
+              category_slug={product?.category?.slug}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

@@ -48,14 +48,15 @@ export default function ViewCartFloatingButton() {
   if (hiddenPages.some((p) => pathname?.startsWith(p))) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+    <div className="fixed fixed-safe-bottom-high md:fixed-safe-bottom left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-7rem)]">
       <button
         onClick={() => router.push("/cart")}
-        className="btn-primary flex items-center gap-2 px-6 py-3 rounded-full shadow-xl hover:scale-105"
+        className="btn-primary flex items-center gap-2 px-5 py-3 rounded-full shadow-xl text-sm sm:text-base whitespace-nowrap"
         aria-label={`View cart with ${cartCount} items`}
       >
         <ShoppingCart size={20} />
-        {t("cart.viewCart")} ({cartCount})
+        <span className="hidden sm:inline">{t("cart.viewCart")}</span>
+        <span className="font-bold">({cartCount})</span>
       </button>
     </div>
   );

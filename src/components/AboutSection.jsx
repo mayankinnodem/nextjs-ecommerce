@@ -41,17 +41,15 @@ const AboutSection = () => {
   const description = pickLocalized(about, "description", language, t("about.defaultDescription"));
 
   return (
-    <section className="py-16 sm:py-20 bg-gradient-to-b from-white to-gray-50">
-      <div className="page-container grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+    <section className="section-block bg-gradient-to-b from-white to-gray-50">
+      <div className="page-container grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-14 items-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
-            {title}
-          </h2>
+          <h2 className="section-title">{title}</h2>
           {subtitle && (
             <p className="text-lg text-indigo-600 mt-2 font-medium">{subtitle}</p>
           )}
@@ -60,10 +58,7 @@ const AboutSection = () => {
           {about.stats?.length > 0 && (
             <div className="grid grid-cols-2 gap-4 mt-8">
               {about.stats.map((s, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl p-4 shadow-sm border text-center"
-                >
+                <div key={i} className="card p-4 text-center">
                   <p className="text-2xl font-bold text-indigo-600">{s.value}</p>
                   <p className="text-sm text-gray-500 mt-1">
                     {pickLocalized(s, "label", language, s.label)}

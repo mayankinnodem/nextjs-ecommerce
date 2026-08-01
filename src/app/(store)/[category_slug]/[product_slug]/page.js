@@ -77,7 +77,7 @@ export default async function ProductPage({ params }) {
   }
 
   return (
-    <div className="page-container py-6 sm:py-10">
+    <div className="page-container py-6 sm:py-10 pb-float md:pb-10">
       <nav className="flex items-center gap-1 text-sm text-gray-500 mb-6 flex-wrap">
         <Link href="/" className="hover:text-indigo-600 transition">
           Home

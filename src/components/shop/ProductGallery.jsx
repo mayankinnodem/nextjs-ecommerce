@@ -12,7 +12,7 @@ export default function ProductGallery({ images = [], name = "Product" }) {
 
   return (
     <div className="space-y-3">
-      <div className="aspect-square overflow-hidden rounded-2xl border bg-gray-50 shadow-sm">
+      <div className="aspect-square overflow-hidden rounded-2xl border bg-gray-50 shadow-sm ring-1 ring-black/5">
         <img
           src={mainSrc}
           alt={name}
@@ -24,14 +24,15 @@ export default function ProductGallery({ images = [], name = "Product" }) {
       </div>
 
       {validImages.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-1">
           {validImages.map((img, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setActive(i)}
               aria-label={`View image ${i + 1}`}
-              className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
+              aria-current={active === i ? "true" : undefined}
+              className={`snap-start shrink-0 w-20 h-20 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition min-w-[5rem] min-h-[5rem] sm:min-w-0 sm:min-h-0 ${
                 active === i
                   ? "border-indigo-600 ring-2 ring-indigo-200"
                   : "border-gray-200 hover:border-gray-300"

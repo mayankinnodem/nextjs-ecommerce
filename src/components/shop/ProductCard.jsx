@@ -31,7 +31,6 @@ export default function ProductCard({ product }) {
   const stock = product?.stock || 0;
   const lowStock = stock > 0 && stock <= 5;
 
-  // ⭐ Wishlist state
   useEffect(() => {
     try {
       const ids = JSON.parse(localStorage.getItem("wishlistIds")) || [];
@@ -79,7 +78,6 @@ export default function ProductCard({ product }) {
     }
   };
 
-  // 🛒 Add to cart
   const handleAddToCart = () => {
     if (adding || stock === 0) return;
     setAdding(true);
@@ -111,15 +109,12 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <div className="group rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition relative">
-
-
-      {/* ❤️ Wishlist */}
+    <div className="product-card group relative flex flex-col h-full">
       <button
         onClick={handleWishlistToggle}
         disabled={busy}
         aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-        className="absolute top-3 right-3 bg-white p-2 rounded-full shadow z-20 hover:scale-105 transition"
+        className="absolute top-3 right-3 bg-white/90 backdrop-blur p-2.5 rounded-full shadow-md z-20 hover:scale-105 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
       >
         <Heart
           size={18}
@@ -127,67 +122,60 @@ export default function ProductCard({ product }) {
         />
       </button>
 
-      {/* 🔖 Badges */}
-      <div className="absolute top-3 left-3 flex flex-col gap-1 z-20">
+      <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-20">
         {discount > 0 && (
-          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-            {discount}% OFF
+          <span className="bg-red-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+            {t("product.off", { discount })}
           </span>
         )}
         {product?.isTrending && (
-          <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-            <Flame size={12} /> Trending
+          <span className="bg-orange-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+            <Flame size={12} /> {t("product.trending")}
           </span>
         )}
         {product?.isNewArrival && (
-          <span className="bg-green-600 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-            <Sparkles size={12} /> New
+          <span className="bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+            <Sparkles size={12} /> {t("product.new")}
           </span>
         )}
       </div>
 
-      {/* Image */}
-      <Link href={`/${categorySlug}/${productSlug}`}>
+      <Link href={`/${categorySlug}/${productSlug}`} className="block overflow-hidden">
         <img
           src={image}
           alt={product?.name}
-          className="w-full h-52 sm:h-56 object-cover group-hover:scale-105 transition bg-gray-100"
+          className="w-full h-48 sm:h-56 object-cover group-hover:scale-105 transition duration-500 bg-gray-100"
           onError={(e) => {
             e.currentTarget.src = "/placeholder.svg";
           }}
         />
       </Link>
 
-      <div className="p-4 space-y-2">
-
-        {/* Brand + Gender */}
+      <div className="p-4 flex flex-col flex-1 gap-2">
         <div className="flex justify-between text-xs text-gray-500">
-          <span>{product?.brand?.name}</span>
-          <span>{product?.gender}</span>
+          <span className="truncate">{product?.brand?.name}</span>
+          {product?.gender && <span>{product.gender}</span>}
         </div>
 
-        {/* Title */}
         <Link href={`/${categorySlug}/${productSlug}`}>
-          <h3 className="font-semibold text-gray-800 group-hover:text-indigo-600 line-clamp-1">
+          <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2 min-h-[2.5rem] transition">
             {product.name}
           </h3>
         </Link>
 
-        {/* Price */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Price amount={price} className="text-lg font-bold text-indigo-700" />
           {discount > 0 && (
             <Price amount={mrp} className="text-sm line-through text-gray-400" />
           )}
         </div>
 
-        {/* Attributes Preview */}
         {product?.attributes?.length > 0 && (
           <div className="flex flex-wrap gap-1 text-xs">
             {product.attributes.slice(0, 3).map((attr, i) => (
               <span
                 key={i}
-                className="border px-2 py-0.5 rounded text-gray-600"
+                className="bg-gray-100 px-2 py-0.5 rounded-md text-gray-600"
               >
                 {attr.value}
               </span>
@@ -195,50 +183,50 @@ export default function ProductCard({ product }) {
           </div>
         )}
 
-        {/* Stock Info */}
-        {stock === 0 ? (
-          <p className="text-red-500 text-sm font-semibold">{t("product.outOfStock")}</p>
-        ) : lowStock ? (
-          <p className="text-orange-500 text-sm font-semibold">
-            {t("product.onlyLeft", { count: stock })}
-          </p>
-        ) : (
-          <p className="text-green-600 text-sm">{t("product.inStock")}</p>
-        )}
-
-        {added && (
-          <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
-            <CheckCircle2 size={16} /> {t("product.addedToCart")}
-          </div>
-        )}
-
-        {/* Add to Cart */}
-        <button
-          onClick={handleAddToCart}
-          disabled={adding || added || stock === 0}
-          className={`w-full py-2 rounded-lg flex items-center justify-center gap-2 transition 
-            ${
-              stock === 0
-                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                : added
-                ? "bg-green-600 text-white"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
-            }`}
-        >
-          {adding ? (
-            <>
-              <Loader2 size={18} className="animate-spin" /> {t("product.adding")}
-            </>
-          ) : added ? (
-            <>
-              <CheckCircle2 size={18} /> {t("product.added")}
-            </>
+        <div className="mt-auto pt-1">
+          {stock === 0 ? (
+            <p className="text-red-500 text-sm font-semibold">{t("product.outOfStock")}</p>
+          ) : lowStock ? (
+            <p className="text-orange-500 text-sm font-semibold">
+              {t("product.onlyLeft", { count: stock })}
+            </p>
           ) : (
-            <>
-              <ShoppingCart size={18} /> {t("product.addToCart")}
-            </>
+            <p className="text-emerald-600 text-sm">{t("product.inStock")}</p>
           )}
-        </button>
+
+          {added && (
+            <div className="flex items-center gap-2 text-emerald-600 text-sm font-semibold mb-2">
+              <CheckCircle2 size={16} /> {t("product.addedToCart")}
+            </div>
+          )}
+
+          <button
+            onClick={handleAddToCart}
+            disabled={adding || added || stock === 0}
+            className={`w-full py-2.5 rounded-xl flex items-center justify-center gap-2 transition font-semibold text-sm
+              ${
+                stock === 0
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : added
+                  ? "btn-accent"
+                  : "btn-primary"
+              }`}
+          >
+            {adding ? (
+              <>
+                <Loader2 size={18} className="animate-spin" /> {t("product.adding")}
+              </>
+            ) : added ? (
+              <>
+                <CheckCircle2 size={18} /> {t("product.added")}
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={18} /> {t("product.addToCart")}
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

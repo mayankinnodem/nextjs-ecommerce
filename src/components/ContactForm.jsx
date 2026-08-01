@@ -117,51 +117,42 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-xl p-6">
-      <h3 className="text-xl font-semibold mb-4 text-gray-900">
-        Contact Form
-      </h3>
+    <div>
+      <h3 className="text-lg font-bold mb-4 text-gray-900">Contact Form</h3>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* ✅ Name */}
         <div>
-          <label className="block text-gray-700 mb-1">Name</label>
+          <label className="block text-gray-700 mb-1 text-sm font-medium">Name</label>
           <input
             name="name"
             type="text"
             value={form.name}
             onChange={handleChange}
             placeholder="Your Name"
-            className={`w-full border ${
-              errors.name ? "border-red-500" : "border-gray-300"
-            } rounded-lg p-2 focus:ring-2 focus:ring-blue-500`}
+            className={`input-field ${errors.name ? "error" : ""}`}
           />
           {errors.name && (
             <p className="text-red-500 text-sm mt-1">{errors.name}</p>
           )}
         </div>
 
-        {/* ✅ Email */}
         <div>
-          <label className="block text-gray-700 mb-1">Email</label>
+          <label className="block text-gray-700 mb-1 text-sm font-medium">Email</label>
           <input
             name="email"
             type="email"
             value={form.email}
             onChange={handleChange}
             placeholder="Your Email"
-            className={`w-full border ${
-              errors.email ? "border-red-500" : "border-gray-300"
-            } rounded-lg p-2 focus:ring-2 focus:ring-blue-500`}
+            className={`input-field ${errors.email ? "error" : ""}`}
           />
           {errors.email && (
             <p className="text-red-500 text-sm mt-1">{errors.email}</p>
           )}
         </div>
 
-        {/* ✅ Phone — max 10 digits */}
         <div>
-          <label className="block text-gray-700 mb-1">Phone</label>
+          <label className="block text-gray-700 mb-1 text-sm font-medium">Phone</label>
           <input
             name="phone"
             type="tel"
@@ -180,38 +171,32 @@ export default function ContactForm() {
               setForm((prev) => ({ ...prev, phone: onlyDigits }));
             }}
             placeholder="10-digit phone number"
-            className={`w-full border ${
-              errors.phone ? "border-red-500" : "border-gray-300"
-            } rounded-lg p-2 focus:ring-2 focus:ring-blue-500`}
+            className={`input-field ${errors.phone ? "error" : ""}`}
           />
           {errors.phone && (
             <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
           )}
         </div>
 
-        {/* ✅ Message */}
         <div>
-          <label className="block text-gray-700 mb-1">Message</label>
+          <label className="block text-gray-700 mb-1 text-sm font-medium">Message</label>
           <textarea
             name="message"
             rows="4"
             value={form.message}
             onChange={handleChange}
             placeholder="Your Message"
-            className={`w-full border ${
-              errors.message ? "border-red-500" : "border-gray-300"
-            } rounded-lg p-2 focus:ring-2 focus:ring-blue-500`}
-          ></textarea>
+            className={`input-field resize-none ${errors.message ? "error" : ""}`}
+          />
           {errors.message && (
             <p className="text-red-500 text-sm mt-1">{errors.message}</p>
           )}
         </div>
 
-        {/* ✅ Submit */}
         <button
           type="submit"
           disabled={loading}
-          className={`w-full flex justify-center items-center gap-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition ${
+          className={`btn-primary w-full py-3 flex justify-center items-center gap-2 ${
             loading ? "opacity-70 cursor-not-allowed" : ""
           }`}
         >

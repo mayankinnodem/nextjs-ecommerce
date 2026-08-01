@@ -25,51 +25,51 @@ export default function FAQ() {
   };
 
   return (
-    <section className="max-w-4xl mx-auto p-6">
-      <h2 className="text-3xl font-bold text-center mb-10">{t("faq.title")}</h2>
+    <section className="section-block bg-white">
+      <div className="page-container max-w-3xl">
+        <div className="section-header-center">
+          <h2 className="section-title">{t("faq.title")}</h2>
+        </div>
 
-      <div className="space-y-4">
-        {faqs.slice(0, 6).map((f, index) => (
-          <div
-            key={f._id}
-            className="border border-gray-200 rounded-2xl shadow-sm bg-white"
-          >
-            <button
-              onClick={() => toggle(index)}
-              className="w-full flex justify-between items-center px-6 py-4 text-left"
-            >
-              <span className="font-semibold text-gray-800">
-                {pickLocalized(f, "question", language, f.question)}
-              </span>
-              <ChevronDown
-                className={`transition-transform duration-300 shrink-0 ${
-                  openIndex === index ? "rotate-180" : ""
-                }`}
-              />
-            </button>
+        <div className="space-y-3">
+          {faqs.slice(0, 6).map((f, index) => (
+            <div key={f._id} className="card overflow-hidden">
+              <button
+                onClick={() => toggle(index)}
+                aria-expanded={openIndex === index}
+                className="w-full flex justify-between items-start gap-4 px-5 py-4 text-left hover:bg-gray-50/80 transition"
+              >
+                <span className="font-semibold text-gray-900 text-sm sm:text-base">
+                  {pickLocalized(f, "question", language, f.question)}
+                </span>
+                <ChevronDown
+                  size={20}
+                  className={`shrink-0 text-indigo-600 transition-transform duration-300 mt-0.5 ${
+                    openIndex === index ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
 
-            {openIndex === index && (
-              <div className="px-6 pb-5 text-gray-600 text-sm leading-relaxed">
-                {pickLocalized(f, "answer", language, f.answer)}
-              </div>
-            )}
-          </div>
-        ))}
+              {openIndex === index && (
+                <div className="px-5 pb-5 text-gray-600 text-sm leading-relaxed border-t border-gray-100 pt-3">
+                  {pickLocalized(f, "answer", language, f.answer)}
+                </div>
+              )}
+            </div>
+          ))}
 
-        {faqs.length === 0 && (
-          <p className="text-center text-gray-500">{t("faq.noFaqs")}</p>
-        )}
+          {faqs.length === 0 && (
+            <p className="text-center text-gray-500 py-8">{t("faq.noFaqs")}</p>
+          )}
 
-        {faqs.length > 6 && (
-          <div className="text-center mt-8">
-            <Link
-              href="/faq"
-              className="inline-block px-6 py-2 rounded-full bg-black text-white hover:bg-gray-800 transition"
-            >
-              {t("faq.viewAll")}
-            </Link>
-          </div>
-        )}
+          {faqs.length > 6 && (
+            <div className="text-center pt-4">
+              <Link href="/faq" className="btn-primary inline-block px-8 py-3 rounded-full">
+                {t("faq.viewAll")}
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
