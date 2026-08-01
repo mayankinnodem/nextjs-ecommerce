@@ -6,7 +6,11 @@
 export async function revalidateProductPages(product, category) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || "http://localhost:3000";
-    const secret = process.env.REVALIDATE_SECRET || "your-secret-key";
+    const secret = process.env.REVALIDATE_SECRET;
+    if (!secret) {
+      console.warn("REVALIDATE_SECRET is not set");
+      return false;
+    }
 
     const paths = [
       "/", // Homepage
@@ -44,7 +48,11 @@ export async function revalidateProductPages(product, category) {
 export async function revalidateCategoryPages(category) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || "http://localhost:3000";
-    const secret = process.env.REVALIDATE_SECRET || "your-secret-key";
+    const secret = process.env.REVALIDATE_SECRET;
+    if (!secret) {
+      console.warn("REVALIDATE_SECRET is not set");
+      return false;
+    }
 
     const paths = [
       "/", // Homepage

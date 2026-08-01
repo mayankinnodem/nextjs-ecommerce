@@ -6,18 +6,22 @@ const getAllowedOrigin = (origin) => {
   // In production, replace with your actual domains
   const allowedOrigins = [
     process.env.ALLOWED_ORIGIN,
+    process.env.NEXT_PUBLIC_BASE_URL,
     'http://localhost:3000',
     'http://localhost:3001',
-    // Add your mobile app origins here
-  ].filter(Boolean);
+  ].filter(Boolean).map((o) => o.replace(/\/$/, ''));
 
-  // If no origin specified, restrict in production
+  // React Native / same-origin requests often have no Origin header
   if (!origin) {
-    return process.env.NODE_ENV === 'production' ? null : 'http://localhost:3000';
+    return process.env.NODE_ENV === 'production'
+      ? (process.env.ALLOWED_ORIGIN || process.env.NEXT_PUBLIC_BASE_URL || null)
+      : 'http://localhost:3000';
   }
 
+  const normalized = origin.replace(/\/$/, '');
+
   // Check if origin is allowed
-  if (allowedOrigins.includes(origin)) {
+  if (allowedOrigins.includes(normalized)) {
     return origin;
   }
 

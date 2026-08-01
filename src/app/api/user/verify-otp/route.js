@@ -111,10 +111,11 @@ if (!isValid) {
     user.otpExpiresAt = null;
     await user.save();
 
-    // Response
+    // Response (token in body for mobile apps; cookie for web)
     const response = NextResponse.json({
       success: true,
       message: "Login successful!",
+      token,
       user: {
         _id: user._id,
         phone: user.phone,

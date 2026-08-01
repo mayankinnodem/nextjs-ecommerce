@@ -3,11 +3,23 @@
 import { useEffect, useState } from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
 
+function getSiteUrl() {
+  const fromEnv = (process.env.NEXT_PUBLIC_BASE_URL || "").trim().replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin.replace(/\/$/, "");
+  }
+  return "";
+}
+
 export default function Footer() {
   const [contact, setContact] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [siteUrl, setSiteUrl] = useState(getSiteUrl);
 
   useEffect(() => {
+    if (!siteUrl) setSiteUrl(getSiteUrl());
+
     const fetchContact = async () => {
       try {
         const res = await fetch("/api/store/contact-section", { 
@@ -165,19 +177,21 @@ export default function Footer() {
       </a>
     )}
 
-    <a
-      href="https://secure.trust-provider.com/ttb_searcher/trustlogo?v_querytype=W&v_shortname=CL1&v_search=https://tarkeshwarartsglobal.com/&x=6&y=5"
-      target="_blank"
-      rel="noopener noreferrer"
-      title="Secured by PositiveSSL"
-      className="inline-block pt-2"
-    >
-      <img
-        src="/positivessl-trust-seal.png"
-        alt="Secured by PositiveSSL"
-        className="h-[54px] w-auto hover:opacity-90 transition"
-      />
-    </a>
+    {siteUrl && (
+      <a
+        href={`https://secure.trust-provider.com/ttb_searcher/trustlogo?v_querytype=W&v_shortname=CL1&v_search=${encodeURIComponent(`${siteUrl}/`)}&x=6&y=5`}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Secured by PositiveSSL"
+        className="inline-block pt-2"
+      >
+        <img
+          src="/positivessl-trust-seal.png"
+          alt="Secured by PositiveSSL"
+          className="h-[54px] w-auto hover:opacity-90 transition"
+        />
+      </a>
+    )}
 
   </div>
 
