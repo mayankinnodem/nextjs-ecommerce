@@ -3,40 +3,10 @@ import "../globals.css";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import ViewCartFloatingButton from "@/components/CartButton";
-import { getContactSection } from "@/lib/staticData";
+import { getSiteMetadata } from "@/lib/metadata";
 
-// Metadata from API - no hardcoded company name
 export async function generateMetadata() {
-  const contact = await getContactSection();
-
-  const siteName = contact?.siteName || "Store";
-  const description = contact?.description || "";
-  const faviconUrl = contact?.favicon?.url;
-
-  return {
-    title: {
-      default: siteName,
-      template: `%s | ${siteName}`,
-    },
-    description,
-    icons: faviconUrl
-      ? {
-          icon: [
-            {
-              url: faviconUrl,
-              type: "image/png",
-            },
-          ],
-          shortcut: faviconUrl,
-          apple: faviconUrl,
-        }
-      : undefined,
-    openGraph: {
-      title: siteName,
-      description,
-      type: "website",
-    },
-  };
+  return getSiteMetadata();
 }
 
 export default function RootLayout({ children }) {

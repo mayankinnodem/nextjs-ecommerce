@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
 import ContactSection from "@/models/ContactSection";
+import { findContactSectionDocument } from "@/lib/contactSectionQuery";
+import { resolveDomain } from "@/lib/siteUrl";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -93,9 +95,17 @@ export async function PUT(req) {
       }
     }
 
-    // ✅ SAFE UPDATE (NO VERSION ERROR EVER)
+    // ✅ SAFE UPDATE scoped to current domain
+    const domain = await resolveDomain(req);
+    if (domain) {
+      data.domain = domain;
+    }
+
+    const existing = await findContactSectionDocument(domain);
+    const filter = existing?._id ? { _id: existing._id } : domain ? { domain } : {};
+
     const updatedSection = await ContactSection.findOneAndUpdate(
-      {},
+      filter,
       { $set: data },
       { new: true, upsert: true }
     );

@@ -26,6 +26,12 @@ const SocialLinkSchema = new mongoose.Schema(
 
 const ContactSectionSchema = new mongoose.Schema(
   {
+    domain: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
     title: { type: String, required: true },
     subtitle: { type: String, default: "" },
     description: { type: String, default: "" },

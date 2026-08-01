@@ -1,5 +1,6 @@
 import ProductCard from "@/components/shop/ProductCard";
 import { getProductsByCategory, getAllCategories, getContactSection } from "@/lib/staticData";
+import { getSiteMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
 
 // ISR: Revalidate every 60 seconds (1 minute)
@@ -27,15 +28,19 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  return {
-    title: `${category.name} - ${siteName}`,
-    description: category.description || `Browse ${category.name} products at ${siteName}`,
+  const pageTitle = `${category.name} - ${siteName}`;
+  const description =
+    category.description || `Browse ${category.name} products at ${siteName}`;
+
+  return getSiteMetadata({
+    title: pageTitle,
+    description,
     openGraph: {
-      title: `${category.name} - ${siteName}`,
+      title: pageTitle,
       description: category.description || `Browse ${category.name} products`,
       images: category.image?.url ? [category.image.url] : [],
     },
-  };
+  });
 }
 
 export default async function CategoryPage({ params }) {

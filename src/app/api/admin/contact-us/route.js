@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import ContactSection from "@/models/ContactSection";
 import { connectDB } from "@/lib/dbConnect";
+import { findContactSectionDocument } from "@/lib/contactSectionQuery";
+import { resolveDomain } from "@/lib/siteUrl";
 
-export async function GET() {
+export async function GET(request) {
   try {
     await connectDB();
 
-    const data = await ContactSection.findOne();
+    const domain = await resolveDomain(request);
+    const data = await findContactSectionDocument(domain);
 
     return NextResponse.json({
       success: true,
@@ -27,8 +30,15 @@ export async function POST(req) {
   try {
     await connectDB();
     const body = await req.json();
+    const domain = await resolveDomain(req);
 
-    let existing = await ContactSection.findOne();
+    if (domain) {
+      body.domain = domain;
+    }
+
+    const existing = domain
+      ? await findContactSectionDocument(domain)
+      : await findContactSectionDocument();
 
     let saved;
 

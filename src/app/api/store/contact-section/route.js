@@ -1,63 +1,71 @@
-import { connectDB } from "@/lib/dbConnect";
-import ContactSection from "@/models/ContactSection";
-import { NextResponse } from "next/server";
 import { jsonResponse, handleOptions } from "@/lib/apiHelpers";
+import {
+  DEFAULT_CONTACT,
+  findContactSectionDocument,
+} from "@/lib/contactSectionQuery";
+import { resolveDomain } from "@/lib/siteUrl";
 
-// Handle CORS preflight
 export async function OPTIONS() {
   return handleOptions();
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
-    await connectDB();
-
-    const data = await ContactSection.findOne().lean();
+    const domain = await resolveDomain(request);
+    const data = await findContactSectionDocument(domain);
 
     if (!data) {
-      // Return default/empty data instead of 404 to prevent errors (no hardcoded brand name)
-      return jsonResponse({
+      return jsonResponse(
+        {
+          success: true,
+          data: {
+            title: DEFAULT_CONTACT.title,
+            companyName: DEFAULT_CONTACT.companyName,
+            description: DEFAULT_CONTACT.description,
+            address: "",
+            phone: "",
+            email: "",
+            logo: { url: "" },
+            favicon: { url: "" },
+            socialLinks: [],
+          },
+        },
+        200,
+        {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        }
+      );
+    }
+
+    return jsonResponse(
+      {
+        success: true,
+        data,
+      },
+      200,
+      {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      }
+    );
+  } catch (error) {
+    console.error("Contact Section GET Error:", error);
+
+    return jsonResponse(
+      {
         success: true,
         data: {
-          title: "E-Commerce Store",
-          companyName: "E-Commerce Store",
-          description: "Your trusted shopping destination",
+          title: DEFAULT_CONTACT.title,
+          companyName: DEFAULT_CONTACT.companyName,
+          description: DEFAULT_CONTACT.description,
           address: "",
           phone: "",
           email: "",
           logo: { url: "" },
           favicon: { url: "" },
-          socialLinks: []
+          socialLinks: [],
         },
-      }, 200, {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-      });
-    }
-
-    return jsonResponse({
-      success: true,
-      data,
-    }, 200, {
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-    });
-
-  } catch (error) {
-    console.error("Contact Section GET Error:", error);
-
-    // Return default data on error instead of failing
-    return jsonResponse({
-      success: true,
-      data: {
-        title: "E-Commerce Store",
-        companyName: "E-Commerce Store",
-        description: "Your trusted shopping destination",
-        address: "",
-        phone: "",
-        email: "",
-        logo: { url: "" },
-        favicon: { url: "" },
-        socialLinks: []
       },
-    }, 200);
+      200
+    );
   }
 }

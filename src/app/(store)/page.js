@@ -7,25 +7,27 @@ import AboutSection from "@/components/AboutSection";
 import Reviews from "@/components/Reviews";
 import FAQ from "@/components/FAQ";
 import { getContactSection } from "@/lib/staticData";
+import { getSiteMetadata } from "@/lib/metadata";
 
 // ISR: Revalidate homepage every 60 seconds
 export const revalidate = 60;
 
-// SEO from API - company name & description from contact section
 export async function generateMetadata() {
   const contact = await getContactSection();
   const siteName = contact.siteName;
-  const description = contact.description || `Shop at ${siteName}. Quality products, secure payments, and fast delivery.`;
+  const description =
+    contact.description ||
+    `Shop at ${siteName}. Quality products, secure payments, and fast delivery.`;
+  const pageTitle = `${siteName} - Quality Products at Best Prices`;
 
-  return {
-    title: `${siteName} - Quality Products at Best Prices`,
+  return getSiteMetadata({
+    title: pageTitle,
     description,
     openGraph: {
-      title: `${siteName} - Quality Products at Best Prices`,
+      title: pageTitle,
       description,
-      type: "website",
     },
-  };
+  });
 }
 
 export default function Home() {

@@ -2,6 +2,7 @@ import React from "react";
 import ProductActions from "./ProductActions";
 import SuggestedProducts from "@/components/shop/SuggestedProducts";
 import { getProductBySlugs, getAllProducts, getAllCategories, getContactSection } from "@/lib/staticData";
+import { getSiteMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
 
 // ISR: Revalidate every 60 seconds (1 minute)
@@ -48,15 +49,18 @@ export async function generateMetadata({ params }) {
   const price = product.salePrice || product.price;
   const imageUrl = product.images?.[0]?.url;
 
-  return {
-    title: `${product.name} - ${siteName}`,
-    description: product.description || `Buy ${product.name} at ₹${price}. Quality products at ${siteName}.`,
+  const pageTitle = `${product.name} - ${siteName}`;
+  const description =
+    product.description ||
+    `Buy ${product.name} at ₹${price}. Quality products at ${siteName}.`;
+
+  return getSiteMetadata({
+    title: pageTitle,
+    description,
     openGraph: {
-      title: `${product.name} - ${siteName}`,
+      title: pageTitle,
       description: product.description || `Buy ${product.name} at ₹${price}`,
       images: imageUrl ? [imageUrl] : [],
-      // Next.js 16 strict OpenGraph types: use "website"
-      type: "website",
     },
     twitter: {
       card: "summary_large_image",
@@ -64,7 +68,7 @@ export async function generateMetadata({ params }) {
       description: product.description || `Buy ${product.name} at ₹${price}`,
       images: imageUrl ? [imageUrl] : [],
     },
-  };
+  });
 }
 
 export default async function ProductPage({ params }) {
