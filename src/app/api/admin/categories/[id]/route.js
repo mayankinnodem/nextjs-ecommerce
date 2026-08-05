@@ -2,6 +2,25 @@ import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/dbConnect";
 import Category from "@/models/Category";
+import { slugify } from "@/lib/slugify";
+import { revalidateCategoryPages } from "@/lib/revalidateHelper";
+
+function normalizeCategoryUpdate(data) {
+  const normalized = { ...data };
+  const name = normalized.name?.trim();
+
+  if (!normalized.slug?.trim()) {
+    normalized.slug = slugify(name);
+  } else {
+    normalized.slug = slugify(normalized.slug);
+  }
+
+  if (!normalized.slug) {
+    throw new Error("Category slug is required");
+  }
+
+  return normalized;
+}
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -32,8 +51,13 @@ export async function PUT(req, { params }) {
     await connectDB();
 
     const { id } = await params;
+    const existing = await Category.findById(id).lean();
+    if (!existing) {
+      return NextResponse.json({ success: false, error: "Category not found" }, { status: 404 });
+    }
+
     const formData = await req.formData();
-    const updateData = JSON.parse(formData.get("data"));
+    const updateData = normalizeCategoryUpdate(JSON.parse(formData.get("data")));
 
     const file = formData.get("image");
     if (file && file.name) {
@@ -63,6 +87,11 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ success: false, error: "Category not found" }, { status: 404 });
     }
 
+    await revalidateCategoryPages(updatedCategory);
+    if (existing.slug && existing.slug !== updatedCategory.slug) {
+      await revalidateCategoryPages({ slug: existing.slug });
+    }
+
     return NextResponse.json({ success: true, category: updatedCategory });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -85,6 +114,8 @@ export async function DELETE(req, { params }) {
         console.error("Cloudinary deletion failed:", err);
       });
     }
+
+    await revalidateCategoryPages(deleted);
 
     return NextResponse.json({ success: true });
   } catch (err) {

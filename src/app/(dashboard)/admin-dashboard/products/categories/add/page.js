@@ -2,39 +2,39 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { slugify } from "@/lib/slugify";
 
 export default function AddCategoryPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", slug: "", description: "", status: "active" });
+  const [slugEdited, setSlugEdited] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  const generateSlug = (text) => {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-  };
-
   const handleNameChange = (e) => {
     const nameValue = e.target.value;
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       name: nameValue,
-      slug: generateSlug(nameValue),
-    });
+      slug: slugEdited ? prev.slug : slugify(nameValue),
+    }));
   };
 
   const handleSlugChange = (e) => {
-    setForm({ ...form, slug: e.target.value });
+    setSlugEdited(true);
+    setForm((prev) => ({ ...prev, slug: slugify(e.target.value) }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    formData.append("data", JSON.stringify(form));
+    formData.append(
+      "data",
+      JSON.stringify({
+        ...form,
+        slug: slugify(form.slug) || slugify(form.name),
+      })
+    );
     if (image) formData.append("image", image);
 
     const res = await fetch("/api/admin/categories", { method: "POST", body: formData });
@@ -69,14 +69,19 @@ export default function AddCategoryPage() {
         required
       />
 
-      <input
-        type="text"
-        placeholder="Slug"
-        value={form.slug}
-        onChange={handleSlugChange}
-        className="w-full border px-3 py-2 rounded"
-        required
-      />
+      <div>
+        <input
+          type="text"
+          placeholder="Slug (auto-generated from name)"
+          value={form.slug}
+          onChange={handleSlugChange}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          URL: /{form.slug || slugify(form.name) || "category-slug"}
+        </p>
+      </div>
 
       <textarea
         placeholder="Description"

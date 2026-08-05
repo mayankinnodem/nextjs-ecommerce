@@ -54,7 +54,7 @@ export default function CategoriesPage() {
               return (
                 <Link
                   key={cat?._id || cat.slug}
-                  href={`/shop?category=${cat.slug}`}
+                  href={`/${cat.slug}`}
                   className="snap-start shrink-0 first:ml-0"
                 >
                   <div className="card w-56 sm:w-64 md:w-72 p-6 sm:p-8 hover:-translate-y-1 transition-transform duration-300 cursor-pointer group">

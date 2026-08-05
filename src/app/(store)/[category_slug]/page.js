@@ -1,10 +1,13 @@
 import CategoryPageClient from "@/components/CategoryPageClient";
+import CategoryHero from "@/components/CategoryHero";
 import { getProductsByCategory, getAllCategories, getContactSection } from "@/lib/staticData";
 import { getSiteMetadata } from "@/lib/metadata";
+import { serializeForClient } from "@/lib/serializeMongo";
 import { notFound } from "next/navigation";
 
 // ISR: Revalidate every 60 seconds (1 minute)
 export const revalidate = 60;
+export const dynamicParams = true;
 
 // Generate static params for all categories at build time
 export async function generateStaticParams() {
@@ -52,5 +55,13 @@ export default async function CategoryPage({ params }) {
     notFound();
   }
 
-  return <CategoryPageClient category={category} products={products} />;
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <CategoryHero category={category} />
+      <CategoryPageClient
+        products={serializeForClient(products)}
+        categorySlug={category.slug}
+      />
+    </div>
+  );
 }

@@ -18,7 +18,6 @@ export default function AdminDashboardLayout({ children }) {
       router.replace("/admin-login");
       return;
     }
-
     // OPTIONAL: Verify token from backend
     setAuthorized(true);
   }, []);

@@ -5,6 +5,25 @@ import Category from "@/models/Category";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAdminAuth, validateFile, validateImageBuffer } from "@/lib/authHelpers";
+import { slugify } from "@/lib/slugify";
+import { revalidateCategoryPages } from "@/lib/revalidateHelper";
+
+function normalizeCategoryData(data) {
+  const normalized = { ...data };
+  const name = normalized.name?.trim();
+
+  if (!normalized.slug?.trim()) {
+    normalized.slug = slugify(name);
+  } else {
+    normalized.slug = slugify(normalized.slug);
+  }
+
+  if (!normalized.slug) {
+    throw new Error("Category slug is required");
+  }
+
+  return normalized;
+}
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -70,7 +89,8 @@ export const POST = requireAdminAuth(async (req) => {
       categoryData.image = imageData;
     }
 
-    const newCategory = await Category.create(categoryData);
+    const newCategory = await Category.create(normalizeCategoryData(categoryData));
+    await revalidateCategoryPages(newCategory);
     return NextResponse.json({ success: true, category: newCategory });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

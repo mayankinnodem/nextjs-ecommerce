@@ -8,6 +8,7 @@ import Category from "@/models/Category";
 import Product from "@/models/Product";
 import { getContactSectionData } from "./contactSectionQuery";
 import { resolveDomain } from "./siteUrl";
+import { serializeForClient } from "./serializeMongo";
 
 /**
  * Get contact/site section (company name, description, logo, favicon) for SEO & metadata.
@@ -59,7 +60,9 @@ export async function getProductsByCategory(categorySlug) {
   try {
     await connectDB();
     
-    const category = await Category.findOne({ slug: categorySlug, status: "active" }).lean();
+    const category = await Category.findOne({ slug: categorySlug, status: "active" })
+      .select("name slug image description status translations")
+      .lean();
     if (!category) {
       return { category: null, products: [] };
     }
@@ -74,7 +77,10 @@ export async function getProductsByCategory(categorySlug) {
       .sort({ createdAt: -1 })
       .lean();
 
-    return { category, products };
+    return {
+      category: serializeForClient(category),
+      products: serializeForClient(products),
+    };
   } catch (error) {
     console.error("Error fetching products by category:", error);
     return { category: null, products: [] };

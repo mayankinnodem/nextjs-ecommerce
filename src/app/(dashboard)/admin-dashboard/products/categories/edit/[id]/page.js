@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { slugify } from "@/lib/slugify";
 
 export default function EditCategoryPage() {
   const params = useParams();
@@ -14,16 +15,9 @@ export default function EditCategoryPage() {
     status: "active",
   });
 
-  const [image, setImage] = useState(null); // {file} | {url, public_id}
+  const [slugEdited, setSlugEdited] = useState(true);
+  const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const generateSlug = (text) =>
-    text
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
 
   useEffect(() => {
     const fetchCategory = async () => {
@@ -34,7 +28,7 @@ export default function EditCategoryPage() {
         setForm({
           name: data.category.name,
           slug: data.category.slug,
-          description: data.category.description,
+          description: data.category.description || "",
           status: data.category.status,
         });
 
@@ -54,17 +48,28 @@ export default function EditCategoryPage() {
 
   const handleNameChange = (e) => {
     const nameValue = e.target.value;
-    setForm({ ...form, name: nameValue, slug: generateSlug(nameValue) });
+    setForm((prev) => ({
+      ...prev,
+      name: nameValue,
+      slug: slugEdited ? prev.slug : slugify(nameValue),
+    }));
   };
 
   const handleSlugChange = (e) => {
-    setForm({ ...form, slug: e.target.value });
+    setSlugEdited(true);
+    setForm((prev) => ({ ...prev, slug: slugify(e.target.value) }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    formData.append("data", JSON.stringify(form));
+    formData.append(
+      "data",
+      JSON.stringify({
+        ...form,
+        slug: slugify(form.slug) || slugify(form.name),
+      })
+    );
     if (image?.file) formData.append("image", image.file);
 
     const res = await fetch(`/api/admin/categories/${params.id}`, {
@@ -107,14 +112,17 @@ export default function EditCategoryPage() {
         required
       />
 
-      <input
-        type="text"
-        placeholder="Slug"
-        value={form.slug}
-        onChange={handleSlugChange}
-        className="w-full border px-3 py-2 rounded"
-        required
-      />
+      <div>
+        <input
+          type="text"
+          placeholder="Slug"
+          value={form.slug}
+          onChange={handleSlugChange}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+        <p className="text-xs text-gray-500 mt-1">URL: /{form.slug || "category-slug"}</p>
+      </div>
 
       <textarea
         placeholder="Description"
@@ -125,7 +133,7 @@ export default function EditCategoryPage() {
 
       <input
         type="file"
-        onChange={(e) => setImage({ file: e.target.files[0] })}
+        onChange={(e) => setImage({ ...image, file: e.target.files[0] })}
       />
 
       {previewUrl && (
