@@ -34,6 +34,7 @@ const navItems = [
   { name: "Contact Us", href: "/admin-dashboard/contact-us" },
   { name: "Reviews", href: "/admin-dashboard/reviews" },
   { name: "FAQ", href: "/admin-dashboard/faq" },
+  { name: "SEO", href: "/admin-dashboard/seo" },
   { name: "Settings", href: "/admin-dashboard/settings" },
 ];
 

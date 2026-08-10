@@ -6,14 +6,18 @@ import ViewCartFloatingButton from "@/components/CartButton";
 import ChatBot from "@/components/ChatBot";
 import StoreProviders from "@/components/StoreProviders";
 import { getSiteMetadata } from "@/lib/metadata";
+import { getGlobalSeoSettings } from "@/lib/seo";
 
 export async function generateMetadata() {
   return getSiteMetadata();
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const settings = await getGlobalSeoSettings();
+  const htmlLang = settings.defaultLanguage || "en";
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={htmlLang} suppressHydrationWarning>
       <body>
         <StoreProviders>
           <Navbar />

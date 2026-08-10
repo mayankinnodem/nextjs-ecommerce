@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import SeoFieldsForm, { EMPTY_SEO_FIELDS } from "@/components/admin/SeoFieldsForm";
+import { structuredDataToText } from "@/lib/seoSchema";
 
 /* ✅ SLUGIFY: place outside the component */
 const slugify = (text) =>
@@ -39,8 +41,7 @@ export default function EditProductClient({ id }) {
     isNewArrival: false,
     season: "All",
     images: [],
-    metaTitle: "",
-    metaDescription: "",
+    seo: { ...EMPTY_SEO_FIELDS },
     tags: "",
     status: "active",
     publishDate: "",
@@ -80,6 +81,13 @@ export default function EditProductClient({ id }) {
             ...prev,
             ...product,
             slug: product.slug || "",
+            seo: {
+              ...EMPTY_SEO_FIELDS,
+              ...(product.seo || {}),
+              metaTitle: product.seo?.metaTitle || product.metaTitle || "",
+              metaDescription: product.seo?.metaDescription || product.metaDescription || "",
+              structuredDataText: structuredDataToText(product.seo?.structuredData),
+            },
             images:
               product.images?.map((img) =>
                 typeof img === "string" ? { url: img } : img
@@ -471,6 +479,12 @@ export default function EditProductClient({ id }) {
             ))}
           </div>
         </section>
+
+        <SeoFieldsForm
+          value={form.seo}
+          onChange={(seo) => setForm({ ...form, seo })}
+          includeSchema
+        />
 
         <button
           type="submit"

@@ -7,6 +7,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { requireAdminAuth, validateFile, validateImageBuffer } from "@/lib/authHelpers";
 import { slugify } from "@/lib/slugify";
 import { revalidateCategoryPages } from "@/lib/revalidateHelper";
+import { normalizeSeoBlock } from "@/lib/seoSchema";
 
 function normalizeCategoryData(data) {
   const normalized = { ...data };
@@ -20,6 +21,14 @@ function normalizeCategoryData(data) {
 
   if (!normalized.slug) {
     throw new Error("Category slug is required");
+  }
+
+  if (normalized.seo) {
+    try {
+      normalized.seo = normalizeSeoBlock(normalized.seo);
+    } catch (err) {
+      throw new Error(err.message || "Invalid category SEO schema JSON");
+    }
   }
 
   return normalized;

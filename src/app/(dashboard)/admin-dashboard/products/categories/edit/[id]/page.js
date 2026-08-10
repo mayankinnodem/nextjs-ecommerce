@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { slugify } from "@/lib/slugify";
+import SeoFieldsForm, { EMPTY_SEO_FIELDS } from "@/components/admin/SeoFieldsForm";
+import { structuredDataToText } from "@/lib/seoSchema";
 
 export default function EditCategoryPage() {
   const params = useParams();
@@ -13,6 +15,7 @@ export default function EditCategoryPage() {
     slug: "",
     description: "",
     status: "active",
+    seo: { ...EMPTY_SEO_FIELDS },
   });
 
   const [slugEdited, setSlugEdited] = useState(true);
@@ -30,6 +33,11 @@ export default function EditCategoryPage() {
           slug: data.category.slug,
           description: data.category.description || "",
           status: data.category.status,
+          seo: {
+            ...EMPTY_SEO_FIELDS,
+            ...(data.category.seo || {}),
+            structuredDataText: structuredDataToText(data.category.seo?.structuredData),
+          },
         });
 
         if (data.category.image) {
@@ -152,6 +160,13 @@ export default function EditCategoryPage() {
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
+
+      <SeoFieldsForm
+        value={form.seo}
+        onChange={(seo) => setForm({ ...form, seo })}
+        showPathPreview={form.slug ? `/${form.slug}` : "/category-slug"}
+        includeSchema
+      />
 
       <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
         Update Category

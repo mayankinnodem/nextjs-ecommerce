@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/dbConnect";
 import Product from "@/models/Product";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAdminAuth, validateFile, validateImageBuffer } from "@/lib/authHelpers";
+import { normalizeSeoBlock } from "@/lib/seoSchema";
 
 // ✅ Slug helper
 const slugify = (text) =>
@@ -118,6 +119,21 @@ export const POST = requireAdminAuth(async (req) => {
       publishDate: data.publishDate
         ? new Date(data.publishDate)
         : Date.now(),
+
+      seo: (() => {
+        const raw = data.seo || {
+          metaTitle: data.metaTitle || "",
+          metaDescription: data.metaDescription || "",
+          metaKeywords: "",
+          robotsIndex: true,
+          robotsFollow: true,
+        };
+        try {
+          return normalizeSeoBlock(raw);
+        } catch (err) {
+          throw new Error(err.message || "Invalid product SEO schema JSON");
+        }
+      })(),
     });
 
     // ✅ Upload images with validation

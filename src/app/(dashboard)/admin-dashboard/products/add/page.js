@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import SeoFieldsForm, { EMPTY_SEO_FIELDS } from "@/components/admin/SeoFieldsForm";
 
 // ✅ Define HERE
 const slugify = (text) =>
@@ -33,8 +34,7 @@ export default function AddProductPage() {
     isNewArrival: false,
     season: "All",
     images: [],
-    metaTitle: "",
-    metaDescription: "",
+    seo: { ...EMPTY_SEO_FIELDS },
     tags: "",
     status: "active",
     publishDate: "",
@@ -459,6 +459,12 @@ export default function AddProductPage() {
             ))}
           </div>
         </section>
+
+        <SeoFieldsForm
+          value={form.seo}
+          onChange={(seo) => setForm({ ...form, seo })}
+          includeSchema
+        />
 
         {/* ✅ Submit */}
         <button

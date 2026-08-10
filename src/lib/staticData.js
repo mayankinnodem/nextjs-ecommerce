@@ -61,7 +61,7 @@ export async function getProductsByCategory(categorySlug) {
     await connectDB();
     
     const category = await Category.findOne({ slug: categorySlug, status: "active" })
-      .select("name slug image description status translations")
+      .select("name slug image description status translations seo")
       .lean();
     if (!category) {
       return { category: null, products: [] };
@@ -71,7 +71,7 @@ export async function getProductsByCategory(categorySlug) {
       category: category._id,
       status: "active"
     })
-      .select("name slug price salePrice discount images stock isTrending isFeatured isNewArrival category brand createdAt")
+      .select("name slug price salePrice discount images stock isTrending isFeatured isNewArrival category brand createdAt seo")
       .populate("category", "name slug")
       .populate("brand", "name slug")
       .sort({ createdAt: -1 })

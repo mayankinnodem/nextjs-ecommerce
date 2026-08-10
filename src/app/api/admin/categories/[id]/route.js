@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/dbConnect";
 import Category from "@/models/Category";
 import { slugify } from "@/lib/slugify";
 import { revalidateCategoryPages } from "@/lib/revalidateHelper";
+import { normalizeSeoBlock } from "@/lib/seoSchema";
 
 function normalizeCategoryUpdate(data) {
   const normalized = { ...data };
@@ -17,6 +18,14 @@ function normalizeCategoryUpdate(data) {
 
   if (!normalized.slug) {
     throw new Error("Category slug is required");
+  }
+
+  if (normalized.seo) {
+    try {
+      normalized.seo = normalizeSeoBlock(normalized.seo);
+    } catch (err) {
+      throw new Error(err.message || "Invalid category SEO schema JSON");
+    }
   }
 
   return normalized;

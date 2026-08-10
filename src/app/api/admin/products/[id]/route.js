@@ -3,6 +3,7 @@ import Product from "@/models/Product";
 import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAdminAuth, validateFile, validateImageBuffer } from "@/lib/authHelpers";
+import { normalizeSeoBlock } from "@/lib/seoSchema";
 
 export const runtime = "nodejs";
 
@@ -159,6 +160,27 @@ export const PUT = requireAdminAuth(async (req, { params }) => {
       ),
       ...newImages,
     ];
+
+    if (productData.seo) {
+      try {
+        productData.seo = normalizeSeoBlock({
+          ...existingProduct.seo?.toObject?.() || existingProduct.seo || {},
+          ...productData.seo,
+        });
+      } catch (err) {
+        return NextResponse.json(
+          { success: false, error: err.message || "Invalid product SEO schema JSON" },
+          { status: 400 }
+        );
+      }
+    } else if (productData.metaTitle || productData.metaDescription) {
+      productData.seo = {
+        metaTitle: productData.metaTitle || "",
+        metaDescription: productData.metaDescription || "",
+      };
+    }
+    delete productData.metaTitle;
+    delete productData.metaDescription;
 
     // ✅ Update and return
     const updated = await Product.findByIdAndUpdate(id, productData, {

@@ -1,12 +1,21 @@
-import AboutSection from '@/components/AboutSection'
-import React from 'react'
+import AboutSection from "@/components/AboutSection";
+import { buildStaticPageMetadata } from "@/lib/seo";
+import PageSeoJsonLd from "@/components/seo/PageSeoJsonLd";
 
-const page = () => {
-  return (
-    <div>
-      <AboutSection/>
-    </div>
-  )
+export const revalidate = 60;
+
+export async function generateMetadata() {
+  return buildStaticPageMetadata("/about", {
+    title: "About Us",
+    description: "Learn more about our company, mission and values.",
+  });
 }
 
-export default page
+export default function AboutPage() {
+  return (
+    <div>
+      <PageSeoJsonLd path="/about" />
+      <AboutSection />
+    </div>
+  );
+}

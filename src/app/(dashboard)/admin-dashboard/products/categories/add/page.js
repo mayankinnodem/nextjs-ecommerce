@@ -3,10 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { slugify } from "@/lib/slugify";
+import SeoFieldsForm, { EMPTY_SEO_FIELDS } from "@/components/admin/SeoFieldsForm";
 
 export default function AddCategoryPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", slug: "", description: "", status: "active" });
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    description: "",
+    status: "active",
+    seo: { ...EMPTY_SEO_FIELDS },
+  });
   const [slugEdited, setSlugEdited] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -101,6 +108,13 @@ export default function AddCategoryPage() {
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
+
+      <SeoFieldsForm
+        value={form.seo}
+        onChange={(seo) => setForm({ ...form, seo })}
+        showPathPreview={form.slug ? `/${form.slug}` : "/category-slug"}
+        includeSchema
+      />
 
       <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
         Save Category

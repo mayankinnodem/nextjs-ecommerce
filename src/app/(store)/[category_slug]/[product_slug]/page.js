@@ -3,8 +3,9 @@ import Link from "next/link";
 import ProductActions from "./ProductActions";
 import ProductGallery from "@/components/shop/ProductGallery";
 import SuggestedProducts from "@/components/shop/SuggestedProducts";
-import { getProductBySlugs, getAllProducts, getAllCategories, getContactSection } from "@/lib/staticData";
-import { getSiteMetadata } from "@/lib/metadata";
+import { getProductBySlugs, getAllProducts, getAllCategories } from "@/lib/staticData";
+import { buildProductMetadata } from "@/lib/seo";
+import { JsonLdScript } from "@/components/seo/PageSeoJsonLd";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 
@@ -36,36 +37,13 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { category_slug, product_slug } = await params;
-  const contact = await getContactSection();
-  const siteName = contact.siteName;
   const { product } = await getProductBySlugs(category_slug, product_slug);
 
   if (!product) {
     return { title: "Product Not Found" };
   }
 
-  const price = product.salePrice || product.price;
-  const imageUrl = product.images?.[0]?.url;
-  const pageTitle = `${product.name} - ${siteName}`;
-  const description =
-    product.description ||
-    `Buy ${product.name} at ₹${price}. Quality products at ${siteName}.`;
-
-  return getSiteMetadata({
-    title: pageTitle,
-    description,
-    openGraph: {
-      title: pageTitle,
-      description: product.description || `Buy ${product.name} at ₹${price}`,
-      images: imageUrl ? [imageUrl] : [],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: product.name,
-      description: product.description || `Buy ${product.name} at ₹${price}`,
-      images: imageUrl ? [imageUrl] : [],
-    },
-  });
+  return buildProductMetadata(product, category_slug, product_slug);
 }
 
 export default async function ProductPage({ params }) {
@@ -77,7 +55,9 @@ export default async function ProductPage({ params }) {
   }
 
   return (
-    <div className="page-container py-6 sm:py-10 pb-float md:pb-10">
+    <>
+      <JsonLdScript data={product.seo?.structuredData} />
+      <div className="page-container py-6 sm:py-10 pb-float md:pb-10">
       <nav className="flex items-center gap-1 text-sm text-gray-500 mb-6 flex-wrap">
         <Link href="/" className="hover:text-indigo-600 transition">
           Home
@@ -123,5 +103,6 @@ export default async function ProductPage({ params }) {
         currentProductId={product._id}
       />
     </div>
+    </>
   );
 }

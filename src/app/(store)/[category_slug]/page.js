@@ -1,7 +1,8 @@
 import CategoryPageClient from "@/components/CategoryPageClient";
 import CategoryHero from "@/components/CategoryHero";
-import { getProductsByCategory, getAllCategories, getContactSection } from "@/lib/staticData";
-import { getSiteMetadata } from "@/lib/metadata";
+import { JsonLdScript } from "@/components/seo/PageSeoJsonLd";
+import { getProductsByCategory, getAllCategories } from "@/lib/staticData";
+import { buildCategoryMetadata } from "@/lib/seo";
 import { serializeForClient } from "@/lib/serializeMongo";
 import { notFound } from "next/navigation";
 
@@ -21,29 +22,13 @@ export async function generateStaticParams() {
 // Generate metadata for SEO - site name from API
 export async function generateMetadata({ params }) {
   const { category_slug } = await params;
-  const contact = await getContactSection();
-  const siteName = contact.siteName;
   const { category } = await getProductsByCategory(category_slug);
-  
+
   if (!category) {
-    return {
-      title: "Category Not Found",
-    };
+    return { title: "Category Not Found" };
   }
 
-  const pageTitle = `${category.name} - ${siteName}`;
-  const description =
-    category.description || `Browse ${category.name} products at ${siteName}`;
-
-  return getSiteMetadata({
-    title: pageTitle,
-    description,
-    openGraph: {
-      title: pageTitle,
-      description: category.description || `Browse ${category.name} products`,
-      images: category.image?.url ? [category.image.url] : [],
-    },
-  });
+  return buildCategoryMetadata(category, category_slug);
 }
 
 export default async function CategoryPage({ params }) {
@@ -57,6 +42,7 @@ export default async function CategoryPage({ params }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <JsonLdScript data={category.seo?.structuredData} />
       <CategoryHero category={category} />
       <CategoryPageClient
         products={serializeForClient(products)}
