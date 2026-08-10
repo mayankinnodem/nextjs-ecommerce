@@ -4,7 +4,7 @@ import ProductActions from "./ProductActions";
 import ProductGallery from "@/components/shop/ProductGallery";
 import SuggestedProducts from "@/components/shop/SuggestedProducts";
 import { getProductBySlugs, getAllProducts, getAllCategories } from "@/lib/staticData";
-import { buildProductMetadata } from "@/lib/seo";
+import { buildProductMetadata, getResolvedStructuredData } from "@/lib/seo";
 import { JsonLdScript } from "@/components/seo/PageSeoJsonLd";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -54,9 +54,14 @@ export default async function ProductPage({ params }) {
     notFound();
   }
 
+  const structuredData = await getResolvedStructuredData(
+    `/${category_slug}/${product_slug}`,
+    product.seo
+  );
+
   return (
     <>
-      <JsonLdScript data={product.seo?.structuredData} />
+      <JsonLdScript data={structuredData} />
       <div className="page-container py-6 sm:py-10 pb-float md:pb-10">
       <nav className="flex items-center gap-1 text-sm text-gray-500 mb-6 flex-wrap">
         <Link href="/" className="hover:text-indigo-600 transition">

@@ -4,6 +4,8 @@ import { connectDB } from "@/lib/dbConnect";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAdminAuth, validateFile, validateImageBuffer } from "@/lib/authHelpers";
 import { normalizeSeoBlock } from "@/lib/seoSchema";
+import { syncProductPageSeo, deactivatePageSeoByPath } from "@/lib/seoSync";
+import Category from "@/models/Category";
 
 export const runtime = "nodejs";
 
@@ -185,7 +187,9 @@ export const PUT = requireAdminAuth(async (req, { params }) => {
     // ✅ Update and return
     const updated = await Product.findByIdAndUpdate(id, productData, {
       new: true,
-    });
+    }).populate("category", "slug status");
+
+    await syncProductPageSeo(updated.toObject());
 
     return NextResponse.json({ success: true, product: updated }, { status: 200 });
   } catch (err) {
@@ -212,6 +216,11 @@ export const DELETE = requireAdminAuth(async (req, { params }) => {
     // ✅ Delete Cloudinary media
     for (const img of existingProduct.images) {
       if (img.public_id) await cloudinary.uploader.destroy(img.public_id);
+    }
+
+    const cat = await Category.findById(existingProduct.category).select("slug").lean();
+    if (cat?.slug && existingProduct.slug) {
+      await deactivatePageSeoByPath(`/${cat.slug}/${existingProduct.slug}`);
     }
 
     await Product.findByIdAndDelete(id);

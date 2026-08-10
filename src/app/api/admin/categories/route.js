@@ -8,6 +8,7 @@ import { requireAdminAuth, validateFile, validateImageBuffer } from "@/lib/authH
 import { slugify } from "@/lib/slugify";
 import { revalidateCategoryPages } from "@/lib/revalidateHelper";
 import { normalizeSeoBlock } from "@/lib/seoSchema";
+import { syncCategoryPageSeo } from "@/lib/seoSync";
 
 function normalizeCategoryData(data) {
   const normalized = { ...data };
@@ -99,6 +100,7 @@ export const POST = requireAdminAuth(async (req) => {
     }
 
     const newCategory = await Category.create(normalizeCategoryData(categoryData));
+    await syncCategoryPageSeo(newCategory);
     await revalidateCategoryPages(newCategory);
     return NextResponse.json({ success: true, category: newCategory });
   } catch (err) {

@@ -1,10 +1,9 @@
-import { getPageSeoByPath } from "@/lib/seo";
+import { getResolvedStructuredData } from "@/lib/seo";
 
 function JsonLdScript({ data }) {
   if (!data) return null;
 
-  const json =
-    typeof data === "string" ? data : JSON.stringify(data);
+  const json = typeof data === "string" ? data : JSON.stringify(data);
 
   return (
     <script
@@ -14,10 +13,10 @@ function JsonLdScript({ data }) {
   );
 }
 
-/** Renders JSON-LD from admin Page SEO settings for a static route */
-export default async function PageSeoJsonLd({ path }) {
-  const pageSeo = await getPageSeoByPath(path);
-  return <JsonLdScript data={pageSeo?.structuredData} />;
+/** Renders JSON-LD from PageSeo for any path (optional entity SEO fallback) */
+export default async function PageSeoJsonLd({ path, entitySeo = null }) {
+  const structuredData = await getResolvedStructuredData(path, entitySeo);
+  return <JsonLdScript data={structuredData} />;
 }
 
 export { JsonLdScript };

@@ -2,7 +2,7 @@ import CategoryPageClient from "@/components/CategoryPageClient";
 import CategoryHero from "@/components/CategoryHero";
 import { JsonLdScript } from "@/components/seo/PageSeoJsonLd";
 import { getProductsByCategory, getAllCategories } from "@/lib/staticData";
-import { buildCategoryMetadata } from "@/lib/seo";
+import { buildCategoryMetadata, getResolvedStructuredData } from "@/lib/seo";
 import { serializeForClient } from "@/lib/serializeMongo";
 import { notFound } from "next/navigation";
 
@@ -40,9 +40,14 @@ export default async function CategoryPage({ params }) {
     notFound();
   }
 
+  const structuredData = await getResolvedStructuredData(
+    `/${category_slug}`,
+    category.seo
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <JsonLdScript data={category.seo?.structuredData} />
+      <JsonLdScript data={structuredData} />
       <CategoryHero category={category} />
       <CategoryPageClient
         products={serializeForClient(products)}

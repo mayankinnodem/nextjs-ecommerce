@@ -6,6 +6,9 @@ import { getSiteUrl } from "@/lib/siteUrl";
 import { getSiteMetadata } from "@/lib/metadata";
 import { STATIC_SEO_PAGES } from "@/lib/seoConstants";
 import { toOpenGraphLocale } from "@/lib/seoSchema";
+import { pickSeoFields, parseKeywords } from "@/lib/seoFields";
+import { getResolvedSeoForPath, syncAllSeoPages } from "@/lib/seoSync";
+import { normalizeSeoPath } from "@/lib/seoPath";
 
 export async function getGlobalSeoSettings() {
   try {
@@ -31,6 +34,7 @@ export async function ensureStaticPageSeoRecords() {
         $setOnInsert: {
           path: page.path,
           label: page.label,
+          pageType: "static",
           robotsIndex: page.robotsIndex !== false,
           robotsFollow: true,
         },
@@ -43,45 +47,26 @@ export async function ensureStaticPageSeoRecords() {
 export async function getPageSeoByPath(path) {
   try {
     await connectDB();
-    await ensureStaticPageSeoRecords();
-    return PageSeo.findOne({ path, status: "active" }).lean();
+    const normalizedPath = normalizeSeoPath(path);
+    return PageSeo.findOne({ path: normalizedPath, status: "active" }).lean();
   } catch (error) {
     console.error("Error fetching page SEO:", error);
     return null;
   }
 }
 
-export async function getAllPageSeoRecords() {
+export async function getAllPageSeoRecords({ sync = true } = {}) {
   await connectDB();
-  await ensureStaticPageSeoRecords();
-  return PageSeo.find().sort({ label: 1 }).lean();
-}
-
-function parseKeywords(keywords) {
-  if (!keywords) return undefined;
-  if (Array.isArray(keywords)) return keywords.filter(Boolean);
-  return keywords
-    .split(",")
-    .map((k) => k.trim())
-    .filter(Boolean);
-}
-
-function pickSeoFields(source = {}) {
-  if (!source) return {};
-  return {
-    metaTitle: source.metaTitle || "",
-    metaDescription: source.metaDescription || "",
-    metaKeywords: source.metaKeywords || "",
-    ogTitle: source.ogTitle || "",
-    ogDescription: source.ogDescription || "",
-    ogImage: source.ogImage || null,
-    canonicalUrl: source.canonicalUrl || "",
-    publisher: source.publisher || "",
-    language: source.language || "",
-    structuredData: source.structuredData || null,
-    robotsIndex: source.robotsIndex !== false,
-    robotsFollow: source.robotsFollow !== false,
-  };
+  if (sync) {
+    try {
+      await syncAllSeoPages();
+    } catch (err) {
+      console.error("SEO sync warning:", err.message);
+    }
+  } else {
+    await ensureStaticPageSeoRecords();
+  }
+  return PageSeo.find().sort({ pageType: 1, label: 1 }).lean();
 }
 
 export async function buildMetadataFromSeo({ seo = {}, fallback = {}, path = "" }) {
@@ -173,13 +158,19 @@ export async function buildMetadataFromSeo({ seo = {}, fallback = {}, path = "" 
   return metadata;
 }
 
-export async function buildStaticPageMetadata(path, fallback = {}) {
-  const pageSeo = await getPageSeoByPath(path);
+/** Universal metadata builder — works for any path on the site */
+export async function buildPageMetadata(path, fallback = {}, entitySeo = null) {
+  const normalizedPath = normalizeSeoPath(path);
+  const resolvedSeo = await getResolvedSeoForPath(normalizedPath, entitySeo);
   return buildMetadataFromSeo({
-    seo: pageSeo || {},
+    seo: resolvedSeo || {},
     fallback,
-    path,
+    path: normalizedPath,
   });
+}
+
+export async function buildStaticPageMetadata(path, fallback = {}) {
+  return buildPageMetadata(path, fallback);
 }
 
 export async function buildCategoryMetadata(category, categorySlug) {
@@ -191,11 +182,7 @@ export async function buildCategoryMetadata(category, categorySlug) {
     image: category.image?.url || category.seo?.ogImage?.url || "",
   };
 
-  return buildMetadataFromSeo({
-    seo: category.seo || {},
-    fallback,
-    path,
-  });
+  return buildPageMetadata(path, fallback, category.seo || {});
 }
 
 export async function buildProductMetadata(product, categorySlug, productSlug) {
@@ -212,11 +199,12 @@ export async function buildProductMetadata(product, categorySlug, productSlug) {
       "",
   };
 
-  return buildMetadataFromSeo({
-    seo: product.seo || {},
-    fallback,
-    path,
-  });
+  return buildPageMetadata(path, fallback, product.seo || {});
+}
+
+export async function getResolvedStructuredData(path, entitySeo = null) {
+  const resolved = await getResolvedSeoForPath(path, entitySeo);
+  return resolved?.structuredData || null;
 }
 
 export { pickSeoFields, parseKeywords };

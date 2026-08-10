@@ -5,6 +5,7 @@ import Product from "@/models/Product";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAdminAuth, validateFile, validateImageBuffer } from "@/lib/authHelpers";
 import { normalizeSeoBlock } from "@/lib/seoSchema";
+import { syncProductPageSeo } from "@/lib/seoSync";
 
 // ✅ Slug helper
 const slugify = (text) =>
@@ -184,6 +185,7 @@ export const POST = requireAdminAuth(async (req) => {
 
     // ✅ Save product
     await product.save();
+    await syncProductPageSeo(product.toObject());
 
     return new Response(
       JSON.stringify({ success: true, product }),

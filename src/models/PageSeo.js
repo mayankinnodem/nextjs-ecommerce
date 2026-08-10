@@ -4,6 +4,14 @@ const PageSeoSchema = new mongoose.Schema(
   {
     path: { type: String, required: true, unique: true, trim: true },
     label: { type: String, required: true, trim: true },
+    pageType: {
+      type: String,
+      enum: ["static", "category", "product", "custom"],
+      default: "static",
+    },
+    sourceId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    sourceModel: { type: String, default: null },
+    isCustom: { type: Boolean, default: false },
     metaTitle: { type: String, default: "" },
     metaDescription: { type: String, default: "" },
     metaKeywords: { type: String, default: "" },

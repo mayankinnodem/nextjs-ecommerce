@@ -5,6 +5,7 @@ import Category from "@/models/Category";
 import { slugify } from "@/lib/slugify";
 import { revalidateCategoryPages } from "@/lib/revalidateHelper";
 import { normalizeSeoBlock } from "@/lib/seoSchema";
+import { syncCategoryPageSeo, deactivatePageSeoByPath } from "@/lib/seoSync";
 
 function normalizeCategoryUpdate(data) {
   const normalized = { ...data };
@@ -96,10 +97,13 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ success: false, error: "Category not found" }, { status: 404 });
     }
 
-    await revalidateCategoryPages(updatedCategory);
+    await syncCategoryPageSeo(updatedCategory);
     if (existing.slug && existing.slug !== updatedCategory.slug) {
+      await deactivatePageSeoByPath(`/${existing.slug}`);
       await revalidateCategoryPages({ slug: existing.slug });
     }
+
+    await revalidateCategoryPages(updatedCategory);
 
     return NextResponse.json({ success: true, category: updatedCategory });
   } catch (err) {
@@ -124,6 +128,7 @@ export async function DELETE(req, { params }) {
       });
     }
 
+    await deactivatePageSeoByPath(`/${deleted.slug}`);
     await revalidateCategoryPages(deleted);
 
     return NextResponse.json({ success: true });
