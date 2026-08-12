@@ -59,9 +59,9 @@ export default function ProductsList({ limit = 8, titleKey = "products.featured"
       <section className="section-block bg-white">
         <div className="page-container">
           {header}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
             {Array.from({ length: limit }).map((_, i) => (
-              <div key={i} className="skeleton h-80 rounded-2xl" />
+              <div key={i} className="skeleton h-72 sm:h-80 rounded-2xl" />
             ))}
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function ProductsList({ limit = 8, titleKey = "products.featured"
     <section className="section-block bg-white">
       <div className="page-container">
         {header}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
           {products.map((product) => (
             <ProductCard
               key={product._id}

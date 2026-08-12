@@ -42,25 +42,26 @@ const AboutSection = () => {
 
   return (
     <section className="section-block bg-gradient-to-b from-white to-gray-50">
-      <div className="page-container grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-14 items-center">
+      <div className="page-container grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 lg:gap-14 items-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           viewport={{ once: true }}
+          className="order-2 md:order-1"
         >
           <h2 className="section-title">{title}</h2>
           {subtitle && (
-            <p className="text-lg text-indigo-600 mt-2 font-medium">{subtitle}</p>
+            <p className="text-base sm:text-lg text-indigo-600 mt-2 font-medium">{subtitle}</p>
           )}
-          <p className="mt-5 text-gray-600 leading-relaxed">{description}</p>
+          <p className="mt-4 sm:mt-5 text-gray-600 leading-relaxed text-sm sm:text-base">{description}</p>
 
           {about.stats?.length > 0 && (
-            <div className="grid grid-cols-2 gap-4 mt-8">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-6 sm:mt-8">
               {about.stats.map((s, i) => (
-                <div key={i} className="card p-4 text-center">
-                  <p className="text-2xl font-bold text-indigo-600">{s.value}</p>
-                  <p className="text-sm text-gray-500 mt-1">
+                <div key={i} className="card p-3 sm:p-4 text-center">
+                  <p className="text-xl sm:text-2xl font-bold text-indigo-600">{s.value}</p>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     {pickLocalized(s, "label", language, s.label)}
                   </p>
                 </div>
@@ -75,7 +76,7 @@ const AboutSection = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
             viewport={{ once: true }}
-            className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-lg"
+            className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-lg order-1 md:order-2"
           >
             <img
               src={about.image.url}

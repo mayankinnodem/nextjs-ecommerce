@@ -57,22 +57,22 @@ export default function CategoriesPage() {
                   href={`/${cat.slug}`}
                   className="snap-start shrink-0 first:ml-0"
                 >
-                  <div className="card w-56 sm:w-64 md:w-72 p-6 sm:p-8 hover:-translate-y-1 transition-transform duration-300 cursor-pointer group">
+                  <div className="card w-[70vw] max-w-[280px] sm:w-64 md:w-72 p-5 sm:p-8 hover:-translate-y-1 transition-transform duration-300 cursor-pointer group">
                     <div className="flex justify-center">
                       {cat?.image?.url ? (
                         <img
                           src={cat.image.url}
                           alt={displayName}
-                          className="w-28 h-28 sm:w-32 sm:h-32 object-cover rounded-full border-4 border-indigo-50 bg-gray-100 group-hover:scale-105 transition duration-300"
+                          className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-full border-4 border-indigo-50 bg-gray-100 group-hover:scale-105 transition duration-300"
                         />
                       ) : (
-                        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-indigo-100 flex items-center justify-center text-3xl font-bold text-indigo-600">
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-indigo-100 flex items-center justify-center text-2xl sm:text-3xl font-bold text-indigo-600">
                           {displayName?.[0]?.toUpperCase()}
                         </div>
                       )}
                     </div>
 
-                    <h3 className="mt-5 text-center text-lg sm:text-xl font-bold text-gray-900 line-clamp-2 min-h-[3.5rem]">
+                    <h3 className="mt-4 sm:mt-5 text-center text-base sm:text-xl font-bold text-gray-900 line-clamp-2 min-h-[2.75rem] sm:min-h-[3.5rem]">
                       {displayName}
                     </h3>
 

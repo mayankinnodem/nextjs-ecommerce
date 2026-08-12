@@ -10,6 +10,20 @@ import { pickSeoFields, parseKeywords } from "@/lib/seoFields";
 import { getResolvedSeoForPath, syncAllSeoPages } from "@/lib/seoSync";
 import { normalizeSeoPath } from "@/lib/seoPath";
 
+/** Collapse repeated trailing " | SiteName" (e.g. "Page | Brand | Brand" → "Page | Brand"). */
+function normalizePageTitle(title, siteName) {
+  if (!title) return title;
+  let result = String(title).trim();
+  if (!siteName) return result;
+
+  const escaped = siteName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const repeated = new RegExp(
+    `(\\s*\\|\\s*${escaped})(\\s*\\|\\s*${escaped})+$`,
+    "i"
+  );
+  return result.replace(repeated, "$1");
+}
+
 export async function getGlobalSeoSettings() {
   try {
     await connectDB();
@@ -116,9 +130,10 @@ export async function buildMetadataFromSeo({ seo = {}, fallback = {}, path = "" 
 
   const ogLocale = toOpenGraphLocale(language);
 
-  const pageTitle = seoData.metaTitle
-    ? { absolute: seoData.metaTitle }
-    : fallback.title || siteName;
+  // Always use `absolute` so layout titleTemplate never appends the brand twice
+  // (DB meta titles already include the company name).
+  const rawTitle = (seoData.metaTitle || fallback.title || siteName).trim();
+  const pageTitle = { absolute: normalizePageTitle(rawTitle, siteName) };
 
   const metadata = await getSiteMetadata({
     title: pageTitle,

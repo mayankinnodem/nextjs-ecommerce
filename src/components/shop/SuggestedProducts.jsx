@@ -32,10 +32,10 @@ export default function SuggestedProducts({ categorySlug, currentProductId }) {
   if (!items.length) return null;
 
   return (
-    <div className="mt-16">
-      <h2 className="text-2xl font-bold mb-6">{t("products.suggested")}</h2>
+    <div className="mt-10 sm:mt-16">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{t("products.suggested")}</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {items.map((item) => (
           <ProductCard key={item._id} product={item} />
         ))}

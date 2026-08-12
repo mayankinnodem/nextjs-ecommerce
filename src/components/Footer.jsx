@@ -17,8 +17,8 @@ function getSiteUrl() {
 
 function FooterSkeleton() {
   return (
-    <footer className="bg-gray-900 pt-14 pb-6">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+    <footer className="bg-gray-900 pt-10 sm:pt-14 pb-6">
+      <div className="page-container grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-3">
             <div className="skeleton h-6 w-32 bg-gray-700" />
@@ -78,28 +78,28 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-gray-950 to-black text-gray-300 pt-14">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+    <footer className="bg-gradient-to-br from-gray-900 via-gray-950 to-black text-gray-300 pt-10 sm:pt-14 pb-safe">
+      <div className="page-container grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
         <div>
           {contact?.logo?.url && (
             <img
               src={contact.logo.url}
               alt={title}
-              className="h-12 mb-4 object-contain"
+              className="h-10 sm:h-12 mb-4 object-contain"
             />
           )}
-          <h2 className="text-xl font-bold text-white mb-3">{title}</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-3">{title}</h2>
           <p className="text-sm leading-relaxed text-gray-400">{description}</p>
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
             {t("footer.quickLinks")}
           </h3>
           <ul className="space-y-2 text-sm">
             {quickLinks.map(([href, key]) => (
               <li key={href}>
-                <Link href={href} className="hover:text-white transition">
+                <Link href={href} className="hover:text-white transition py-0.5 inline-block">
                   {t(key)}
                 </Link>
               </li>
@@ -108,13 +108,13 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
             {t("footer.support")}
           </h3>
           <ul className="space-y-2 text-sm">
             {supportLinks.map(([href, key]) => (
               <li key={href}>
-                <Link href={href} className="hover:text-white transition">
+                <Link href={href} className="hover:text-white transition py-0.5 inline-block">
                   {t(key)}
                 </Link>
               </li>
@@ -123,7 +123,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
             {t("footer.getInTouch")}
           </h3>
           <div className="space-y-3 text-sm">
@@ -135,7 +135,7 @@ export default function Footer() {
                 className="flex items-start gap-2 hover:text-white transition"
               >
                 <MapPin size={16} className="shrink-0 mt-0.5" />
-                {contact.address}
+                <span className="break-words">{contact.address}</span>
               </a>
             )}
             {contact?.phone && (
@@ -143,15 +143,16 @@ export default function Footer() {
                 href={`tel:${contact.phone}`}
                 className="flex items-center gap-2 hover:text-white transition"
               >
-                <Phone size={16} /> {contact.phone}
+                <Phone size={16} className="shrink-0" /> {contact.phone}
               </a>
             )}
             {contact?.email && (
               <a
                 href={`mailto:${contact.email}`}
-                className="flex items-center gap-2 hover:text-white transition"
+                className="flex items-center gap-2 hover:text-white transition min-w-0"
               >
-                <Mail size={16} /> {contact.email}
+                <Mail size={16} className="shrink-0" />
+                <span className="break-all">{contact.email}</span>
               </a>
             )}
 
@@ -162,14 +163,14 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               title="Secured by PositiveSSL"
-              className="inline-block pt-2"
+              className="inline-block pt-2 max-w-full"
             >
               <img
                 src="/positivessl-trust-seal.png"
                 alt="Secured by PositiveSSL"
                 width={222}
                 height={54}
-                className="h-[54px] w-auto hover:opacity-90 transition"
+                className="h-[44px] sm:h-[54px] w-auto max-w-full hover:opacity-90 transition"
               />
             </a>
           </div>
@@ -201,7 +202,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="mt-12 border-t border-gray-800 py-6 text-center text-sm text-gray-500">
+      <div className="mt-10 sm:mt-12 border-t border-gray-800 py-5 sm:py-6 text-center text-xs sm:text-sm text-gray-500 px-4">
         © {new Date().getFullYear()} {title}. {t("footer.rights")}
       </div>
     </footer>

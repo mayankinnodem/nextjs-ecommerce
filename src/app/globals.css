@@ -32,10 +32,12 @@ body {
   background: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
 }
 
 .main-container {
   min-height: calc(100vh - 12rem);
+  overflow-x: clip;
 }
 
 .scrollbar-hide,
@@ -138,6 +140,7 @@ body {
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   background: white;
+  font-size: 1rem; /* avoid iOS zoom on focus */
 }
 
 .input-field:focus {
@@ -166,8 +169,15 @@ body {
 }
 
 .section-block {
-  padding-top: 3rem;
-  padding-bottom: 3rem;
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .section-block {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -178,7 +188,7 @@ body {
 }
 
 .section-title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #111827;
   letter-spacing: -0.02em;

@@ -58,10 +58,10 @@ export default function Flags() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
           {loading
             ? Array.from({ length: 4 }).map((_, idx) => (
-                <div key={idx} className="skeleton h-80 rounded-2xl" />
+                <div key={idx} className="skeleton h-72 sm:h-80 rounded-2xl" />
               ))
             : products.length > 0
             ? products.map((product) => (

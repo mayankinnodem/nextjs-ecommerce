@@ -6,6 +6,7 @@
 import { connectDB } from "./dbConnect";
 import Category from "@/models/Category";
 import Product from "@/models/Product";
+import Brand from "@/models/Brand"; // required for Product.populate("brand")
 import { getContactSectionData } from "./contactSectionQuery";
 import { resolveDomain } from "./siteUrl";
 import { serializeForClient } from "./serializeMongo";

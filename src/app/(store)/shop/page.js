@@ -122,11 +122,11 @@ function ShopContent() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero */}
       <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
-        <div className="page-container py-10 sm:py-14">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+        <div className="page-container py-8 sm:py-14">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
             {t("shop.title")}
           </h1>
-          <p className="mt-2 text-indigo-100 text-base sm:text-lg max-w-xl">
+          <p className="mt-2 text-indigo-100 text-sm sm:text-lg max-w-xl">
             {t("shop.subtitle")}
           </p>
         </div>
@@ -237,10 +237,10 @@ function ShopContent() {
         </div>
 
         {/* Product grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
           {loading
             ? Array.from({ length: itemsPerPage }).map((_, i) => (
-                <div key={i} className="skeleton h-80 rounded-2xl" />
+                <div key={i} className="skeleton h-72 sm:h-80 rounded-2xl" />
               ))
             : products.length > 0
             ? products.map((product) => (
@@ -295,9 +295,9 @@ export default function ShopPage() {
       fallback={
         <div className="page-container py-10">
           <div className="skeleton h-32 rounded-2xl mb-8" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="skeleton h-80 rounded-2xl" />
+              <div key={i} className="skeleton h-72 sm:h-80 rounded-2xl" />
             ))}
           </div>
         </div>

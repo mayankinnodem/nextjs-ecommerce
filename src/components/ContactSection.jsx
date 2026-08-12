@@ -47,13 +47,13 @@ const ContactSection = () => {
 
   return (
     <section className="section-block bg-gradient-to-b from-gray-50 to-indigo-50/30">
-      <div className="page-container grid md:grid-cols-2 gap-8 lg:gap-12 items-start">
-        <div className="space-y-5">
+      <div className="page-container grid md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start">
+        <div className="space-y-4 sm:space-y-5">
           {data.icon?.url && (
             <img
               src={data.icon.url}
               alt=""
-              className="w-14 h-14 object-contain"
+              className="w-12 h-12 sm:w-14 sm:h-14 object-contain"
             />
           )}
 
@@ -61,7 +61,7 @@ const ContactSection = () => {
             <h2 className="section-title">
               {pickLocalized(data, "title", language, t("contact.defaultTitle"))}
             </h2>
-            <p className="section-subtitle mt-2">
+            <p className="section-subtitle mt-2 text-sm sm:text-base">
               {pickLocalized(data, "description", language, t("contact.defaultDescription"))}
             </p>
           </div>
@@ -72,16 +72,16 @@ const ContactSection = () => {
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.address)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-start gap-3 text-gray-700 hover:text-indigo-600 transition card px-4 py-3"
+                className="flex items-start gap-3 text-gray-700 hover:text-indigo-600 transition card px-3 sm:px-4 py-3"
               >
                 <MapPin size={18} className="text-indigo-600 shrink-0 mt-0.5" />
-                <span className="text-sm">{data.address}</span>
+                <span className="text-sm break-words">{data.address}</span>
               </a>
             )}
             {data.phone && (
               <a
                 href={`tel:${data.phone}`}
-                className="flex items-center gap-3 text-gray-700 hover:text-indigo-600 transition card px-4 py-3"
+                className="flex items-center gap-3 text-gray-700 hover:text-indigo-600 transition card px-3 sm:px-4 py-3"
               >
                 <Phone size={18} className="text-indigo-600 shrink-0" />
                 <span className="text-sm">{data.phone}</span>
@@ -90,7 +90,7 @@ const ContactSection = () => {
             {data.email && (
               <a
                 href={`mailto:${data.email}`}
-                className="flex items-center gap-3 text-gray-700 hover:text-indigo-600 transition card px-4 py-3"
+                className="flex items-center gap-3 text-gray-700 hover:text-indigo-600 transition card px-3 sm:px-4 py-3"
               >
                 <Mail size={18} className="text-indigo-600 shrink-0" />
                 <span className="text-sm break-all">{data.email}</span>
@@ -99,7 +99,7 @@ const ContactSection = () => {
           </div>
         </div>
 
-        <div className="card p-5 sm:p-6">
+        <div className="card p-4 sm:p-6">
           <ContactForm />
         </div>
       </div>

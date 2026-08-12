@@ -55,29 +55,29 @@ const Sections = ({ section }) => {
       <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-200/30 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-violet-200/30 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="page-container py-10 sm:py-14 md:py-20 grid grid-cols-1 md:grid-cols-2 items-center gap-8 md:gap-12 relative">
+      <div className="page-container py-8 sm:py-14 md:py-20 grid grid-cols-1 md:grid-cols-2 items-center gap-6 sm:gap-8 md:gap-12 relative">
         <div className="animate-fadeIn order-2 md:order-1">
-          <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+          <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-3 sm:mb-4">
             <Sparkles size={14} />
             {t("hero.shopNow")}
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 leading-[1.15] tracking-tight">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-3 sm:mb-4 leading-[1.15] tracking-tight">
             {title}
           </h1>
 
-          <p className="text-gray-600 mb-8 text-base sm:text-lg leading-relaxed max-w-xl">
+          <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-lg leading-relaxed max-w-xl">
             {subtitle}
           </p>
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-3">
             <button
               onClick={() => router.push("/shop")}
-              className="btn-primary px-8 py-3.5 text-base w-full sm:w-auto"
+              className="btn-primary px-8 py-3 sm:py-3.5 text-sm sm:text-base w-full sm:w-auto"
             >
               {button1}
             </button>
-            <Link href="/about" className="btn-secondary px-8 py-3.5 text-base text-center w-full sm:w-auto">
+            <Link href="/about" className="btn-secondary px-8 py-3 sm:py-3.5 text-sm sm:text-base text-center w-full sm:w-auto">
               {button2}
             </Link>
           </div>
@@ -88,13 +88,13 @@ const Sections = ({ section }) => {
             <img
               src={bannerUrl}
               alt={title || "Hero banner"}
-              className="rounded-3xl max-h-[280px] sm:max-h-[380px] md:max-h-[440px] w-full object-cover shadow-2xl shadow-indigo-200/50 ring-1 ring-black/5"
+              className="rounded-2xl sm:rounded-3xl max-h-[220px] sm:max-h-[380px] md:max-h-[440px] w-full object-cover shadow-2xl shadow-indigo-200/50 ring-1 ring-black/5"
             />
           ) : (
-            <div className="w-full max-h-[440px] aspect-[4/3] rounded-3xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center shadow-inner ring-1 ring-indigo-200/50">
-              <div className="text-center p-8">
-                <div className="text-6xl mb-4">🛍️</div>
-                <p className="text-indigo-700 font-semibold text-lg">
+            <div className="w-full max-h-[440px] aspect-[4/3] rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center shadow-inner ring-1 ring-indigo-200/50">
+              <div className="text-center p-6 sm:p-8">
+                <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">🛍️</div>
+                <p className="text-indigo-700 font-semibold text-base sm:text-lg">
                   {t("hero.placeholder")}
                 </p>
               </div>

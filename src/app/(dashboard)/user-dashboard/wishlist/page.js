@@ -111,7 +111,7 @@ export default function WishlistPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
           {wishlist.map((item) => {
             const categorySlug = item?.category?.slug || "category";
             const productSlug = item?.slug || item._id;

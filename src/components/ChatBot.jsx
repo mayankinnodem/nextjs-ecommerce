@@ -103,7 +103,7 @@ export default function ChatBot() {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed fixed-safe-bottom-high sm:bottom-24 right-3 sm:right-6 w-[calc(100vw-1.5rem)] sm:w-[380px] h-[min(520px,calc(100dvh-9rem))] bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] flex flex-col overflow-hidden animate-fadeIn"
+          className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:inset-x-auto sm:fixed-safe-bottom-high sm:bottom-24 sm:right-6 w-auto sm:w-[380px] h-[min(70dvh,520px)] sm:h-[min(520px,calc(100dvh-9rem))] bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] flex flex-col overflow-hidden animate-fadeIn"
           role="dialog"
           aria-label={t("chatbot.title")}
         >

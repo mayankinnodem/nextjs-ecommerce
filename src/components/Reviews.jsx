@@ -65,7 +65,7 @@ export default function Reviews() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: i * 0.05 }}
                 viewport={{ once: true }}
-                className="snap-start shrink-0 w-[85vw] sm:w-[300px] md:w-[320px] card p-6 pt-12 relative"
+                className="snap-start shrink-0 w-[78vw] max-w-[300px] sm:w-[300px] md:w-[320px] card p-5 sm:p-6 pt-12 relative"
               >
                 <div className="flex flex-col items-center text-center">
                   {review.photo ? (

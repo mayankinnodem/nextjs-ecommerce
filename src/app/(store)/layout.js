@@ -14,12 +14,17 @@ export async function generateMetadata() {
     getGlobalSeoSettings(),
   ]);
 
-  const template = global.titleTemplate || "%s";
+  // Page meta titles in DB already include the brand, so keep template as passthrough.
+  // Never fall back to "%s | SiteName" here — that doubles the company name on nested routes.
+  const template =
+    global.titleTemplate && global.titleTemplate.includes("%s")
+      ? global.titleTemplate
+      : "%s";
 
   return {
     ...layoutMeta,
     title: {
-      ...layoutMeta.title,
+      default: layoutMeta.title?.default,
       template,
     },
   };

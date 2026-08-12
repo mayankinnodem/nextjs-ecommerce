@@ -152,50 +152,52 @@ export default function Navbar() {
       ref={containerRef}
       className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm"
     >
-      <div className="bg-gray-900 text-gray-200 text-xs sm:text-sm py-2 px-4 flex justify-between items-center">
-        {headerInfo && (
-          <div className="flex gap-4 items-center flex-wrap">
-            {headerInfo.phone && (
-              <a
-                href={`tel:${headerInfo.phone}`}
-                className="flex gap-1 items-center hover:text-indigo-300 transition"
-              >
-                <MdPhone className="text-indigo-400" /> {headerInfo.phone}
-              </a>
-            )}
-            {headerInfo.email && (
-              <a
-                href={`mailto:${headerInfo.email}`}
-                className="hidden sm:flex gap-1 items-center hover:text-indigo-300 transition"
-              >
-                <MdEmail className="text-indigo-400" /> {headerInfo.email}
-              </a>
-            )}
-          </div>
+      <div className="bg-gray-900 text-gray-200 text-xs sm:text-sm py-2 px-3 sm:px-4 flex items-center gap-2 min-h-[2.25rem]">
+        {headerInfo?.phone && (
+          <a
+            href={`tel:${headerInfo.phone}`}
+            className="flex gap-1 items-center hover:text-indigo-300 transition shrink-0 max-w-[45%] truncate"
+          >
+            <MdPhone className="text-indigo-400 shrink-0" />
+            <span className="truncate">{headerInfo.phone}</span>
+          </a>
+        )}
+        {headerInfo?.email && (
+          <a
+            href={`mailto:${headerInfo.email}`}
+            className="hidden md:flex gap-1 items-center hover:text-indigo-300 transition truncate"
+          >
+            <MdEmail className="text-indigo-400 shrink-0" />
+            <span className="truncate">{headerInfo.email}</span>
+          </a>
         )}
 
-        <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+        <div className="flex items-center gap-2.5 sm:gap-4 ml-auto shrink-0">
           <LocaleSwitcher variant="dark" />
-          <Link href="/help" className="hover:text-white transition">
+          <Link href="/help" className="hover:text-white transition whitespace-nowrap">
             {t("nav.help")}
           </Link>
-          <Link href="/track" className="hover:text-white transition">
+          <Link
+            href="/track"
+            className="hover:text-white transition whitespace-nowrap"
+          >
             {t("nav.track")}
           </Link>
         </div>
       </div>
 
-      <div className="page-container py-3 flex justify-between items-center gap-3">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+      <div className="page-container py-2.5 sm:py-3 flex justify-between items-center gap-2 sm:gap-3">
+        <Link href="/" className="flex items-center gap-2 shrink-0 min-w-0 max-w-[50%]">
           {headerInfo?.logo?.url ? (
             <Image
               src={headerInfo.logo.url}
-              height={44}
-              width={44}
+              height={40}
+              width={40}
+              className="w-9 h-9 sm:w-11 sm:h-11 object-contain"
               alt={headerInfo?.title || headerInfo?.companyName || "Logo"}
             />
           ) : (
-            <span className="text-xl font-extrabold text-gray-900">
+            <span className="text-base sm:text-xl font-extrabold text-gray-900 truncate">
               {headerInfo?.title || headerInfo?.companyName || "Store"}
             </span>
           )}
@@ -215,7 +217,7 @@ export default function Navbar() {
 
         <div className="hidden md:flex relative flex-1 max-w-md">
           <input
-            className="input-field pr-10 py-2 text-sm"
+            className="input-field pr-10 py-2"
             placeholder={t("nav.search")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -231,7 +233,7 @@ export default function Navbar() {
           )}
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Link
             href="/user-dashboard/wishlist"
             className="relative p-1 hover:text-indigo-600 transition"
@@ -305,7 +307,7 @@ export default function Navbar() {
           <div className="page-container py-4 space-y-4">
           <div className="relative">
             <input
-              className="input-field pr-10 py-2 text-sm"
+              className="input-field pr-10 py-2.5"
               placeholder={t("nav.search")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}

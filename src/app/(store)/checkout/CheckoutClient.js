@@ -200,7 +200,7 @@ export default function CheckoutClient() {
         {formError && <div className="alert-error mb-6 max-w-3xl mx-auto">{formError}</div>}
         {successMsg && <div className="alert-success mb-6 max-w-3xl mx-auto">{successMsg}</div>}
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8">
           <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">{t("checkout.shipping")}</h2>
