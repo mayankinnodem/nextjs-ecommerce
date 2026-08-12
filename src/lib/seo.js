@@ -84,6 +84,7 @@ export async function getAllPageSeoRecords({ sync = true, request } = {}) {
 }
 
 export async function buildMetadataFromSeo({ seo = {}, fallback = {}, path = "" }) {
+  try {
   const [global, contact, siteUrl] = await Promise.all([
     getGlobalSeoSettings(),
     getContactSection(),
@@ -170,17 +171,36 @@ export async function buildMetadataFromSeo({ seo = {}, fallback = {}, path = "" 
   });
 
   return metadata;
+  } catch (error) {
+    console.error("Error in buildMetadataFromSeo:", path, error);
+    return getSiteMetadata({
+      title: fallback.title
+        ? { absolute: String(fallback.title) }
+        : undefined,
+      description: fallback.description || "",
+    });
+  }
 }
 
 /** Universal metadata builder — works for any path on the site */
 export async function buildPageMetadata(path, fallback = {}, entitySeo = null) {
-  const normalizedPath = normalizeSeoPath(path);
-  const resolvedSeo = await getResolvedSeoForPath(normalizedPath, entitySeo);
-  return buildMetadataFromSeo({
-    seo: resolvedSeo || {},
-    fallback,
-    path: normalizedPath,
-  });
+  try {
+    const normalizedPath = normalizeSeoPath(path);
+    const resolvedSeo = await getResolvedSeoForPath(normalizedPath, entitySeo);
+    return buildMetadataFromSeo({
+      seo: resolvedSeo || {},
+      fallback,
+      path: normalizedPath,
+    });
+  } catch (error) {
+    console.error("Error building page metadata:", path, error);
+    return getSiteMetadata({
+      title: fallback.title
+        ? { absolute: String(fallback.title) }
+        : undefined,
+      description: fallback.description || "",
+    });
+  }
 }
 
 export async function buildStaticPageMetadata(path, fallback = {}) {

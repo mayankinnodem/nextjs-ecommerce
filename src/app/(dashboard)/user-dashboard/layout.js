@@ -8,6 +8,8 @@ import "../../globals.css";
 import { connectDB } from "@/lib/dbConnect";
 import User from "@/models/User";
 
+export const dynamic = "force-dynamic";
+
 export default async function UserDashboardLayout({ children }) {
   try {
     await connectDB();

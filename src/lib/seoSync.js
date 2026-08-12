@@ -192,32 +192,38 @@ export async function syncEntitySeoToPage({
 
 /** Resolve final SEO for any path — PageSeo (admin DB) is primary; entity SEO is fallback only */
 export async function getResolvedSeoForPath(path, entitySeo = null) {
-  await connectDB();
-  const normalizedPath = normalizeSeoPath(path);
-  const pageSeo = await PageSeo.findOne({
-    path: normalizedPath,
-    status: "active",
-  }).lean();
+  try {
+    await connectDB();
+    const normalizedPath = normalizeSeoPath(path);
+    const pageSeo = await PageSeo.findOne({
+      path: normalizedPath,
+      status: "active",
+    }).lean();
 
-  if (pageSeo) {
-    const picked = pickSeoFields(pageSeo);
-    const hasPageContent =
-      hasSeoValue(pageSeo.metaTitle) ||
-      hasSeoValue(pageSeo.metaDescription) ||
-      hasSeoValue(pageSeo.structuredData);
+    if (pageSeo) {
+      const picked = pickSeoFields(pageSeo);
+      const hasPageContent =
+        hasSeoValue(pageSeo.metaTitle) ||
+        hasSeoValue(pageSeo.metaDescription) ||
+        hasSeoValue(pageSeo.structuredData);
 
-    if (hasPageContent) {
-      return picked;
+      if (hasPageContent) {
+        return picked;
+      }
     }
-  }
 
-  if (entitySeo && hasSeoValue(entitySeo.metaTitle)) {
-    return pickSeoFields(entitySeo);
-  }
+    if (entitySeo && hasSeoValue(entitySeo.metaTitle)) {
+      return pickSeoFields(entitySeo);
+    }
 
-  if (pageSeo) return pickSeoFields(pageSeo);
-  if (entitySeo) return pickSeoFields(entitySeo);
-  return null;
+    if (pageSeo) return pickSeoFields(pageSeo);
+    if (entitySeo) return pickSeoFields(entitySeo);
+    return null;
+  } catch (error) {
+    console.error("Error resolving SEO for path:", path, error);
+    if (entitySeo) return pickSeoFields(entitySeo);
+    return null;
+  }
 }
 
 export async function createCustomPageSeo({ path, label }) {

@@ -4,19 +4,28 @@ import {
   resolveDatabaseName,
 } from "@/lib/siteDatabase";
 
-const globalForMongoose = global;
+const globalForMongoose = globalThis;
+
+if (!globalForMongoose.__mongooseCache) {
+  globalForMongoose.__mongooseCache = {
+    uri: null,
+    promise: null,
+  };
+}
 
 const connectionOptions = {
   maxPoolSize: 10,
-  minPoolSize: 2,
-  serverSelectionTimeoutMS: 5000,
+  minPoolSize: 1,
+  serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  maxIdleTimeMS: 30000,
+  maxIdleTimeMS: 60000,
+  bufferCommands: true,
 };
 
 /**
  * Connect to MongoDB for the current website (domain → database via SITE_DB_MAP).
- * Falls back to the database name in MONGODB_URI when domain is not mapped.
+ * Safe for Next.js parallel static generation: concurrent callers share one promise
+ * and we never disconnect mid-flight for the same URI.
  */
 const connectDB = async (request) => {
   const dbName = await resolveDatabaseName(request);
@@ -26,25 +35,55 @@ const connectDB = async (request) => {
     throw new Error("MONGODB_URI is not configured");
   }
 
-  if (
-    globalForMongoose.mongooseUri === targetUri &&
-    mongoose.connection.readyState === 1
-  ) {
+  const cache = globalForMongoose.__mongooseCache;
+
+  // Already connected to the right database
+  if (cache.uri === targetUri && mongoose.connection.readyState === 1) {
     return mongoose.connection;
   }
 
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.disconnect();
+  // Connection in progress for the same URI — reuse it
+  if (cache.uri === targetUri && cache.promise) {
+    return cache.promise;
   }
 
-  await mongoose.connect(targetUri, connectionOptions);
-  globalForMongoose.mongooseUri = targetUri;
-
-  if (process.env.NODE_ENV === "development") {
-    console.log(`✅ MongoDB connected → ${dbName || "default"}`);
+  // Switching databases: wait for any in-flight connect, then disconnect once
+  if (cache.uri && cache.uri !== targetUri) {
+    if (cache.promise) {
+      try {
+        await cache.promise;
+      } catch {
+        // previous connect failed; continue to new URI
+      }
+    }
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+    cache.uri = null;
+    cache.promise = null;
   }
 
-  return mongoose.connection;
+  cache.uri = targetUri;
+  cache.promise = mongoose
+    .connect(targetUri, connectionOptions)
+    .then((m) => {
+      try {
+        m.connection.setMaxListeners?.(50);
+      } catch {
+        // ignore
+      }
+      if (process.env.NODE_ENV === "development") {
+        console.log(`✅ MongoDB connected → ${dbName || "default"}`);
+      }
+      return m.connection;
+    })
+    .catch((err) => {
+      cache.promise = null;
+      cache.uri = null;
+      throw err;
+    });
+
+  return cache.promise;
 };
 
 export { connectDB };

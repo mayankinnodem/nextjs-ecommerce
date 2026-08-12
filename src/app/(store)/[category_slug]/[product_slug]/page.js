@@ -1,13 +1,14 @@
-import React from "react";
-import Link from "next/link";
 import ProductActions from "./ProductActions";
 import ProductGallery from "@/components/shop/ProductGallery";
 import SuggestedProducts from "@/components/shop/SuggestedProducts";
 import { getProductBySlugs, getAllProducts, getAllCategories } from "@/lib/staticData";
 import { buildProductMetadata, getResolvedStructuredData } from "@/lib/seo";
 import { JsonLdScript } from "@/components/seo/PageSeoJsonLd";
+import { serializeForClient } from "@/lib/serializeMongo";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import Link from "next/link";
+import React from "react";
 
 export const revalidate = 60;
 
@@ -48,11 +49,21 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductPage({ params }) {
   const { category_slug, product_slug } = await params;
-  const { product } = await getProductBySlugs(category_slug, product_slug);
+  const { product: rawProduct } = await getProductBySlugs(
+    category_slug,
+    product_slug
+  );
 
-  if (!product) {
+  if (!rawProduct) {
     notFound();
   }
+
+  // Ensure Client Components only receive plain JSON (no ObjectId buffers)
+  const product = serializeForClient(rawProduct);
+  const galleryImages = (product.images || []).map((img) => ({
+    url: img?.url || "",
+    public_id: img?.public_id || "",
+  }));
 
   const structuredData = await getResolvedStructuredData(
     `/${category_slug}/${product_slug}`,
@@ -85,7 +96,7 @@ export default async function ProductPage({ params }) {
       </nav>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-        <ProductGallery images={product.images || []} name={product.name} />
+        <ProductGallery images={galleryImages} name={product.name} />
 
         <div className="space-y-4">
           {product.brand?.name && (
@@ -105,7 +116,7 @@ export default async function ProductPage({ params }) {
 
       <SuggestedProducts
         categorySlug={product.category?.slug}
-        currentProductId={product._id}
+        currentProductId={String(product._id || "")}
       />
     </div>
     </>

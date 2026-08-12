@@ -19,18 +19,29 @@ function buildIcons(faviconUrl) {
  * Page routes supply SEO from the database via buildPageMetadata().
  */
 export async function getLayoutMetadata() {
-  const contact = await getContactSection();
-  const siteUrl = await getSiteUrl();
-  const siteName = contact?.siteName || DEFAULT_SITE_NAME;
+  try {
+    const contact = await getContactSection();
+    const siteUrl = await getSiteUrl();
+    const siteName = contact?.siteName || DEFAULT_SITE_NAME;
 
-  return {
-    metadataBase: new URL(siteUrl),
-    title: {
-      default: siteName,
-      template: "%s",
-    },
-    icons: buildIcons(contact?.favicon?.url),
-  };
+    return {
+      metadataBase: new URL(siteUrl || "http://localhost:3000"),
+      title: {
+        default: siteName,
+        template: "%s",
+      },
+      icons: buildIcons(contact?.favicon?.url),
+    };
+  } catch (error) {
+    console.error("Layout metadata fetch error:", error);
+    return {
+      metadataBase: new URL("http://localhost:3000"),
+      title: {
+        default: DEFAULT_SITE_NAME,
+        template: "%s",
+      },
+    };
+  }
 }
 
 /**
