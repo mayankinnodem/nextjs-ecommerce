@@ -5,10 +5,7 @@ import PageSeoJsonLd from "@/components/seo/PageSeoJsonLd";
 export const revalidate = 60;
 
 export async function generateMetadata() {
-  return buildStaticPageMetadata("/about", {
-    title: "About Us",
-    description: "Learn more about our company, mission and values.",
-  });
+  return buildStaticPageMetadata("/about");
 }
 
 export default function AboutPage() {

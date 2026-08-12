@@ -5,11 +5,24 @@ import Footer from "../../components/Footer";
 import ViewCartFloatingButton from "@/components/CartButton";
 import ChatBot from "@/components/ChatBot";
 import StoreProviders from "@/components/StoreProviders";
-import { getSiteMetadata } from "@/lib/metadata";
+import { getLayoutMetadata } from "@/lib/metadata";
 import { getGlobalSeoSettings } from "@/lib/seo";
 
 export async function generateMetadata() {
-  return getSiteMetadata();
+  const [layoutMeta, global] = await Promise.all([
+    getLayoutMetadata(),
+    getGlobalSeoSettings(),
+  ]);
+
+  const template = global.titleTemplate || "%s";
+
+  return {
+    ...layoutMeta,
+    title: {
+      ...layoutMeta.title,
+      template,
+    },
+  };
 }
 
 export default async function RootLayout({ children }) {

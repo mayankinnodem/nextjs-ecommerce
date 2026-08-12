@@ -1,6 +1,10 @@
 /**
- * Resolve the current site domain and base URL from request headers or env.
+ * Resolve the current site domain and base URL from request headers, database, or env.
  */
+
+import { connectDB } from "@/lib/dbConnect";
+import SeoSettings from "@/models/SeoSettings";
+import { resolveSiteDomain } from "@/lib/siteDatabase";
 
 export function normalizeDomain(value) {
   if (!value) return "";
@@ -52,11 +56,7 @@ export async function resolveDomain(request) {
 }
 
 export async function getSiteUrl(request) {
-  const fromEnv = (process.env.NEXT_PUBLIC_BASE_URL || "")
-    .trim()
-    .replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-
+  // 1. Live request host (most accurate for multi-site)
   if (request) {
     const host =
       request.headers.get("x-forwarded-host") ||
@@ -67,12 +67,35 @@ export async function getSiteUrl(request) {
     }
   }
 
-  const domain = await getRequestDomain();
-  if (domain) return `https://${domain}`;
+  const fromHeaders = await getRequestDomain();
+  if (fromHeaders) {
+    return `https://${fromHeaders}`.replace(/\/$/, "");
+  }
+
+  // 2. Site URL stored in this website's database
+  try {
+    await connectDB(request);
+    const settings = await SeoSettings.findOne().select("siteUrl").lean();
+    if (settings?.siteUrl?.trim()) {
+      return settings.siteUrl.trim().replace(/\/$/, "");
+    }
+  } catch {
+    // DB unavailable during build
+  }
+
+  // 3. Environment fallback
+  const fromEnv = (process.env.NEXT_PUBLIC_BASE_URL || "")
+    .trim()
+    .replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
 
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`.replace(/\/$/, "");
   }
 
   return "http://localhost:3000";
+}
+
+export async function getCurrentSiteDomain(request) {
+  return resolveSiteDomain(request);
 }

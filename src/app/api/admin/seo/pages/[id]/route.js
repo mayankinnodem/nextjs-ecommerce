@@ -30,7 +30,7 @@ export async function GET(req, { params }) {
 
 export const PUT = requireAdminAuth(async (req, { params }) => {
   try {
-    await connectDB();
+    await connectDB(req);
     const { id } = await params;
     const formData = await req.formData();
     const raw = JSON.parse(formData.get("data") || "{}");

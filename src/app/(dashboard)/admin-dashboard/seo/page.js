@@ -22,6 +22,7 @@ export default function SeoAdminPage() {
   const [tab, setTab] = useState("global");
   const [globalSeo, setGlobalSeo] = useState({
     siteName: "",
+    siteUrl: "",
     titleTemplate: "%s",
     defaultMetaDescription: "",
     defaultMetaKeywords: "",
@@ -300,6 +301,17 @@ export default function SeoAdminPage() {
             onChange={(e) => setGlobalSeo({ ...globalSeo, siteName: e.target.value })}
             className="w-full border px-3 py-2 rounded"
           />
+
+          <input
+            type="text"
+            placeholder="Site URL (e.g. https://rmkleathercraft.com)"
+            value={globalSeo.siteUrl || ""}
+            onChange={(e) => setGlobalSeo({ ...globalSeo, siteUrl: e.target.value })}
+            className="w-full border px-3 py-2 rounded"
+          />
+          <p className="text-xs text-gray-500 -mt-2">
+            Used for canonical URLs &amp; sitemap when domain is not detected from request.
+          </p>
 
           <textarea
             placeholder="Default Meta Description"

@@ -2,10 +2,7 @@ import { buildStaticPageMetadata } from "@/lib/seo";
 import PageSeoJsonLd from "@/components/seo/PageSeoJsonLd";
 
 export async function generateMetadata() {
-  return buildStaticPageMetadata("/login", {
-    title: "Login",
-    description: "Login to your account",
-  });
+  return buildStaticPageMetadata("/login");
 }
 
 export default function LoginLayout({ children }) {

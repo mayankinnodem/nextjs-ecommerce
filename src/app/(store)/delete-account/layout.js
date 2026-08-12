@@ -2,10 +2,7 @@ import { buildStaticPageMetadata } from "@/lib/seo";
 import PageSeoJsonLd from "@/components/seo/PageSeoJsonLd";
 
 export async function generateMetadata() {
-  return buildStaticPageMetadata("/delete-account", {
-    title: "Delete Account",
-    description: "Request account deletion",
-  });
+  return buildStaticPageMetadata("/delete-account");
 }
 
 export default function DeleteAccountLayout({ children }) {

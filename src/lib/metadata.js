@@ -15,7 +15,26 @@ function buildIcons(faviconUrl) {
 }
 
 /**
- * Base site metadata (title template, favicon, openGraph) scoped to the current domain.
+ * Minimal layout-level metadata only (no page-specific description/OG).
+ * Page routes supply SEO from the database via buildPageMetadata().
+ */
+export async function getLayoutMetadata() {
+  const contact = await getContactSection();
+  const siteUrl = await getSiteUrl();
+  const siteName = contact?.siteName || DEFAULT_SITE_NAME;
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: siteName,
+      template: "%s",
+    },
+    icons: buildIcons(contact?.favicon?.url),
+  };
+}
+
+/**
+ * Full metadata for a specific page (used by buildMetadataFromSeo).
  */
 export async function getSiteMetadata(overrides = {}) {
   const contact = await getContactSection();
@@ -28,33 +47,61 @@ export async function getSiteMetadata(overrides = {}) {
     title,
     description: overrideDescription,
     openGraph,
+    twitter,
     ...rest
   } = overrides;
 
   const resolvedDescription = overrideDescription ?? description;
 
+  // When title is { absolute: "..." } from DB, do not apply layout template
+  const resolvedTitle =
+    title ??
+    ({
+      default: siteName,
+      template: "%s",
+    });
+
+  const resolvedOpenGraph = {
+    type: "website",
+    siteName,
+    ...(openGraph || {}),
+  };
+
+  if (!resolvedOpenGraph.title) {
+    resolvedOpenGraph.title =
+      typeof title === "object" && title.absolute
+        ? title.absolute
+        : typeof title === "string"
+          ? title
+          : siteName;
+  }
+  if (!resolvedOpenGraph.description) {
+    resolvedOpenGraph.description = resolvedDescription;
+  }
+  if (!resolvedOpenGraph.url) {
+    resolvedOpenGraph.url = siteUrl;
+  }
+
+  const resolvedTwitter = twitter || {
+    card: "summary_large_image",
+    title: resolvedOpenGraph.title,
+    description: resolvedOpenGraph.description,
+    images: resolvedOpenGraph.images,
+  };
+
   return {
     metadataBase: new URL(siteUrl),
-    title: title ?? {
-      default: siteName,
-      template: `%s | ${siteName}`,
-    },
+    title: resolvedTitle,
     description: resolvedDescription,
     keywords: overrides.keywords,
     robots: overrides.robots,
     alternates: overrides.alternates,
     verification: overrides.verification,
     icons: buildIcons(faviconUrl),
-    openGraph: {
-      title: openGraph?.title ?? siteName,
-      description: openGraph?.description ?? resolvedDescription,
-      type: "website",
-      url: openGraph?.url ?? siteUrl,
-      siteName,
-      ...openGraph,
-    },
+    openGraph: resolvedOpenGraph,
+    twitter: resolvedTwitter,
     ...rest,
   };
 }
 
-export { DEFAULT_SITE_NAME, DEFAULT_DESCRIPTION };
+export { DEFAULT_SITE_NAME, DEFAULT_DESCRIPTION, buildIcons };

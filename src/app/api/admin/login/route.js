@@ -8,7 +8,7 @@ import { connectDB } from "@/lib/dbConnect";
 
 export async function POST(req) {
   try {
-    await connectDB();
+    await connectDB(req);
     const { email, password } = await req.json();
 
     // Validate fields

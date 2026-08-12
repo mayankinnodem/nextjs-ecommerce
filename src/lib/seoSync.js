@@ -75,8 +75,8 @@ async function upsertPageStub({ path, label, pageType, sourceId, sourceModel, st
 }
 
 /** Sync all known routes into PageSeo (static + categories + products). Does not wipe existing SEO content. */
-export async function syncAllSeoPages() {
-  await connectDB();
+export async function syncAllSeoPages(request) {
+  await connectDB(request);
 
   let created = 0;
   let updated = 0;
@@ -190,7 +190,7 @@ export async function syncEntitySeoToPage({
   );
 }
 
-/** Resolve final SEO for any path (PageSeo + optional entity fallback) */
+/** Resolve final SEO for any path — PageSeo (admin DB) is primary; entity SEO is fallback only */
 export async function getResolvedSeoForPath(path, entitySeo = null) {
   await connectDB();
   const normalizedPath = normalizeSeoPath(path);
@@ -199,10 +199,25 @@ export async function getResolvedSeoForPath(path, entitySeo = null) {
     status: "active",
   }).lean();
 
-  if (!pageSeo && !entitySeo) return null;
-  if (!pageSeo) return pickSeoFields(entitySeo);
-  if (!entitySeo) return pickSeoFields(pageSeo);
-  return mergeSeoFields(pageSeo, entitySeo);
+  if (pageSeo) {
+    const picked = pickSeoFields(pageSeo);
+    const hasPageContent =
+      hasSeoValue(pageSeo.metaTitle) ||
+      hasSeoValue(pageSeo.metaDescription) ||
+      hasSeoValue(pageSeo.structuredData);
+
+    if (hasPageContent) {
+      return picked;
+    }
+  }
+
+  if (entitySeo && hasSeoValue(entitySeo.metaTitle)) {
+    return pickSeoFields(entitySeo);
+  }
+
+  if (pageSeo) return pickSeoFields(pageSeo);
+  if (entitySeo) return pickSeoFields(entitySeo);
+  return null;
 }
 
 export async function createCustomPageSeo({ path, label }) {

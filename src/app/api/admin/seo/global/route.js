@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/dbConnect";
 import SeoSettings from "@/models/SeoSettings";
 import { requireAdminAuth } from "@/lib/authHelpers";
 import { v2 as cloudinary } from "cloudinary";
+import { resolveSiteDomain } from "@/lib/siteDatabase";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -10,9 +11,9 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const GET = requireAdminAuth(async () => {
+export const GET = requireAdminAuth(async (req) => {
   try {
-    await connectDB();
+    await connectDB(req);
     let settings = await SeoSettings.findOne();
     if (!settings) {
       settings = await SeoSettings.create({});
@@ -25,9 +26,14 @@ export const GET = requireAdminAuth(async () => {
 
 export const PUT = requireAdminAuth(async (req) => {
   try {
-    await connectDB();
+    await connectDB(req);
     const formData = await req.formData();
     const data = JSON.parse(formData.get("data") || "{}");
+
+    const domain = await resolveSiteDomain(req);
+    if (domain) {
+      data.domain = domain;
+    }
 
     const file = formData.get("defaultOgImage");
     if (file && file.name && file.size > 0) {

@@ -1,38 +1,50 @@
 import mongoose from "mongoose";
+import {
+  buildMongoUriWithDb,
+  resolveDatabaseName,
+} from "@/lib/siteDatabase";
 
-const connectDB = async () => {
-  // Check if already connected
-  if (mongoose.connections[0]?.readyState === 1) {
-    return; // already connected
+const globalForMongoose = global;
+
+const connectionOptions = {
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  maxIdleTimeMS: 30000,
+};
+
+/**
+ * Connect to MongoDB for the current website (domain → database via SITE_DB_MAP).
+ * Falls back to the database name in MONGODB_URI when domain is not mapped.
+ */
+const connectDB = async (request) => {
+  const dbName = await resolveDatabaseName(request);
+  const targetUri = buildMongoUriWithDb(dbName);
+
+  if (!targetUri) {
+    throw new Error("MONGODB_URI is not configured");
   }
-  
-  try {
-    // If connection is in progress, wait for it
-    if (mongoose.connections[0]?.readyState === 2) {
-      await new Promise((resolve) => {
-        mongoose.connection.once("connected", resolve);
-        mongoose.connection.once("error", resolve);
-      });
-      if (mongoose.connections[0]?.readyState === 1) {
-        return;
-      }
-    }
-    
-    await mongoose.connect(process.env.MONGODB_URI, {
-      maxPoolSize: 10, // Maintain up to 10 socket connections
-      minPoolSize: 2, // Maintain minimum 2 connections for better performance
-      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-      // Note: bufferMaxEntries and bufferCommands are not supported in Mongoose 8.x
-      // Buffering is handled automatically by Mongoose
-    });
-    
-    console.log("✅ MongoDB Connected");
-  } catch (error) {
-    console.error("❌ MongoDB Connection Error:", error.message);
-    throw error;
+
+  if (
+    globalForMongoose.mongooseUri === targetUri &&
+    mongoose.connection.readyState === 1
+  ) {
+    return mongoose.connection;
   }
+
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+  }
+
+  await mongoose.connect(targetUri, connectionOptions);
+  globalForMongoose.mongooseUri = targetUri;
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(`✅ MongoDB connected → ${dbName || "default"}`);
+  }
+
+  return mongoose.connection;
 };
 
 export { connectDB };

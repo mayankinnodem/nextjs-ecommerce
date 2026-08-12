@@ -6,7 +6,6 @@ import Flags from "@/components/shop/Flags";
 import AboutSection from "@/components/AboutSection";
 import Reviews from "@/components/Reviews";
 import FAQ from "@/components/FAQ";
-import { getContactSection } from "@/lib/staticData";
 import { buildStaticPageMetadata } from "@/lib/seo";
 import PageSeoJsonLd from "@/components/seo/PageSeoJsonLd";
 
@@ -14,14 +13,7 @@ import PageSeoJsonLd from "@/components/seo/PageSeoJsonLd";
 export const revalidate = 60;
 
 export async function generateMetadata() {
-  const contact = await getContactSection();
-  const siteName = contact.siteName;
-  return buildStaticPageMetadata("/", {
-    title: `${siteName} - Quality Products at Best Prices`,
-    description:
-      contact.description ||
-      `Shop at ${siteName}. Quality products, secure payments, and fast delivery.`,
-  });
+  return buildStaticPageMetadata("/");
 }
 
 export default function Home() {

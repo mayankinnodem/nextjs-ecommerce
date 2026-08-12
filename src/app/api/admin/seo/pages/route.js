@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/authHelpers";
+import { connectDB } from "@/lib/dbConnect";
 import { getAllPageSeoRecords } from "@/lib/seo";
 import {
   createCustomPageSeo,
-  syncAllSeoPages,
 } from "@/lib/seoSync";
 import { isValidSeoPath, normalizeSeoPath } from "@/lib/seoPath";
 
 export const GET = requireAdminAuth(async (req) => {
   try {
-    const { searchParams } = new URL(req.url);
-    const shouldSync = searchParams.get("sync") !== "false";
-    const pages = await getAllPageSeoRecords({ sync: shouldSync });
+    const pages = await getAllPageSeoRecords({ sync: true, request: req });
     return NextResponse.json({ success: true, pages });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -20,6 +18,7 @@ export const GET = requireAdminAuth(async (req) => {
 
 export const POST = requireAdminAuth(async (req) => {
   try {
+    await connectDB(req);
     const body = await req.json();
     const path = normalizeSeoPath(body.path || "");
     const label = (body.label || path).trim();

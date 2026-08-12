@@ -2,10 +2,7 @@ import { buildStaticPageMetadata } from "@/lib/seo";
 import PageSeoJsonLd from "@/components/seo/PageSeoJsonLd";
 
 export async function generateMetadata() {
-  return buildStaticPageMetadata("/shop", {
-    title: "Shop",
-    description: "Browse our full product catalog with filters and search.",
-  });
+  return buildStaticPageMetadata("/shop");
 }
 
 export default function ShopLayout({ children }) {

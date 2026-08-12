@@ -1,10 +1,7 @@
 import { buildStaticPageMetadata } from "@/lib/seo";
 
 export async function generateMetadata() {
-  return buildStaticPageMetadata("/faq", {
-    title: "FAQ",
-    description: "Frequently asked questions about orders, shipping and returns.",
-  });
+  return buildStaticPageMetadata("/faq");
 }
 
 export default function FaqLayout({ children }) {

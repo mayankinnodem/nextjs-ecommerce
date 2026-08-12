@@ -55,11 +55,11 @@ export async function getPageSeoByPath(path) {
   }
 }
 
-export async function getAllPageSeoRecords({ sync = true } = {}) {
-  await connectDB();
+export async function getAllPageSeoRecords({ sync = true, request } = {}) {
+  await connectDB(request);
   if (sync) {
     try {
-      await syncAllSeoPages();
+      await syncAllSeoPages(request);
     } catch (err) {
       console.error("SEO sync warning:", err.message);
     }
@@ -79,11 +79,6 @@ export async function buildMetadataFromSeo({ seo = {}, fallback = {}, path = "" 
   const siteName = global.siteName || contact.siteName || "Store";
   const seoData = pickSeoFields(seo);
 
-  const title =
-    seoData.metaTitle ||
-    fallback.title ||
-    siteName;
-
   const description =
     seoData.metaDescription ||
     fallback.description ||
@@ -91,7 +86,7 @@ export async function buildMetadataFromSeo({ seo = {}, fallback = {}, path = "" 
     contact.description ||
     "";
 
-  const ogTitle = seoData.ogTitle || title;
+  const ogTitle = seoData.ogTitle || seoData.metaTitle || fallback.title || siteName;
   const ogDescription = seoData.ogDescription || description;
   const ogImage =
     seoData.ogImage?.url ||
@@ -121,8 +116,12 @@ export async function buildMetadataFromSeo({ seo = {}, fallback = {}, path = "" 
 
   const ogLocale = toOpenGraphLocale(language);
 
+  const pageTitle = seoData.metaTitle
+    ? { absolute: seoData.metaTitle }
+    : fallback.title || siteName;
+
   const metadata = await getSiteMetadata({
-    title,
+    title: pageTitle,
     description,
     keywords,
     robots: {

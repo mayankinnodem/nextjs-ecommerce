@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 const SeoSettingsSchema = new mongoose.Schema(
   {
     siteName: { type: String, default: "" },
+    siteUrl: { type: String, default: "" },
+    domain: { type: String, default: "" },
     titleTemplate: { type: String, default: "%s" },
     defaultMetaDescription: { type: String, default: "" },
     defaultMetaKeywords: { type: String, default: "" },
