@@ -53,7 +53,7 @@ export async function ensureStaticPageSeoRecords() {
           robotsFollow: true,
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
   }
 }

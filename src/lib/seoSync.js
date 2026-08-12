@@ -49,15 +49,12 @@ export function mergeSeoFields(primary = {}, secondary = {}) {
 }
 
 async function upsertPageStub({ path, label, pageType, sourceId, sourceModel, status }) {
+  // Do not put the same paths in both $set and $setOnInsert — Mongo rejects that.
   return PageSeo.findOneAndUpdate(
     { path },
     {
       $setOnInsert: {
         path,
-        label,
-        pageType,
-        sourceId: sourceId || null,
-        sourceModel: sourceModel || null,
         isCustom: pageType === "custom",
         robotsIndex: pageType !== "cart" && !path.includes("checkout"),
         robotsFollow: true,
@@ -70,7 +67,7 @@ async function upsertPageStub({ path, label, pageType, sourceId, sourceModel, st
         status: status || "active",
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: "after" }
   );
 }
 
@@ -186,7 +183,7 @@ export async function syncEntitySeoToPage({
   return PageSeo.findOneAndUpdate(
     { path: normalizedPath },
     { $set: update },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: "after" }
   );
 }
 
@@ -299,7 +296,7 @@ export async function deactivatePageSeoByPath(path) {
   return PageSeo.findOneAndUpdate(
     { path: normalizeSeoPath(path) },
     { status: "inactive" },
-    { new: true }
+    { returnDocument: "after" }
   );
 }
 
