@@ -113,7 +113,7 @@ export async function getProductBySlugs(categorySlug, productSlug) {
       return { success: false, product: null };
     }
 
-    return { success: true, product };
+    return { success: true, product: serializeForClient(product) };
   } catch (error) {
     console.error("Error fetching product:", error);
     return { success: false, product: null };

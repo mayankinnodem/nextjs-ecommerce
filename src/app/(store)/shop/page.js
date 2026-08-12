@@ -26,9 +26,6 @@ function ShopContent() {
   const [total, setTotal] = useState(0);
 
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [category, setCategory] = useState(
-    searchParams.get("category") || "all"
-  );
   const [priceRange, setPriceRange] = useState(
     searchParams.get("priceRange") || "all"
   );
@@ -38,6 +35,16 @@ function ShopContent() {
   );
 
   const itemsPerPage = 8;
+  const legacyCategory = searchParams.get("category");
+  const isRedirectingCategory =
+    Boolean(legacyCategory) && legacyCategory !== "all";
+
+  // Legacy /shop?category=slug → /{slug}
+  useEffect(() => {
+    if (isRedirectingCategory) {
+      router.replace(`/${legacyCategory}`);
+    }
+  }, [isRedirectingCategory, legacyCategory, router]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -60,7 +67,6 @@ function ShopContent() {
       params.set("limit", itemsPerPage.toString());
 
       if (search) params.set("search", search);
-      if (category !== "all") params.set("category", category);
       if (priceRange !== "all") params.set("priceRange", priceRange);
       if (sort !== "default") params.set("sort", sort);
 
@@ -84,43 +90,61 @@ function ShopContent() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, category, priceRange, sort]);
+  }, [page, search, priceRange, sort]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
   useEffect(() => {
+    if (isRedirectingCategory) return;
     fetchProducts();
-  }, [fetchProducts]);
+  }, [fetchProducts, isRedirectingCategory]);
 
   useEffect(() => {
+    if (isRedirectingCategory) return;
+
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    if (category !== "all") params.set("category", category);
     if (priceRange !== "all") params.set("priceRange", priceRange);
     if (sort !== "default") params.set("sort", sort);
     if (page > 1) params.set("page", page.toString());
-    router.replace(`/shop?${params.toString()}`, { scroll: false });
-  }, [search, category, priceRange, sort, page, router]);
+    const qs = params.toString();
+    router.replace(qs ? `/shop?${qs}` : "/shop", { scroll: false });
+  }, [search, priceRange, sort, page, router, isRedirectingCategory]);
 
   const resetFilters = () => {
     setSearch("");
-    setCategory("all");
     setPriceRange("all");
     setSort("default");
     setPage(1);
   };
 
+  const handleCategoryChange = (slug) => {
+    if (!slug || slug === "all") return;
+    router.push(`/${slug}`);
+  };
+
   const activeFilters =
     (search ? 1 : 0) +
-    (category !== "all" ? 1 : 0) +
     (priceRange !== "all" ? 1 : 0) +
     (sort !== "default" ? 1 : 0);
 
+  if (isRedirectingCategory) {
+    return (
+      <div className="page-container py-10">
+        <div className="skeleton h-32 rounded-2xl mb-8" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton h-72 sm:h-80 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Hero */}
       <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
         <div className="page-container py-8 sm:py-14">
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
@@ -133,7 +157,6 @@ function ShopContent() {
       </div>
 
       <section className="page-container py-8 sm:py-10">
-        {/* Mobile filter toggle */}
         <button
           type="button"
           onClick={() => setFiltersOpen((o) => !o)}
@@ -154,7 +177,6 @@ function ShopContent() {
           />
         </button>
 
-        {/* Filter bar */}
         <div
           className={`card p-4 sm:p-5 mb-8 space-y-4 ${
             filtersOpen ? "block" : "hidden md:block"
@@ -173,11 +195,8 @@ function ShopContent() {
             />
 
             <select
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setPage(1);
-              }}
+              value="all"
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="input-field"
             >
               <option value="all">{t("shop.allCategories")}</option>
@@ -236,7 +255,6 @@ function ShopContent() {
           </div>
         </div>
 
-        {/* Product grid */}
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
           {loading
             ? Array.from({ length: itemsPerPage }).map((_, i) => (
@@ -260,7 +278,6 @@ function ShopContent() {
             )}
         </div>
 
-        {/* Pagination */}
         {total > 0 && (
           <div className="flex justify-center items-center gap-2 sm:gap-3 mt-10 flex-wrap">
             <button
